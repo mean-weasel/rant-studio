@@ -1,5 +1,11 @@
-.superpowers/
-node_modules/
 dist/
+node_modules/
+.superpowers/
 coverage/
+test-results/
 *.log
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+.rant-studio/

@@ -1,0 +1,6 @@
+{
+  "name": "@rant-studio/api",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts"
+}
