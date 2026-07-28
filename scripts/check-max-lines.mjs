@@ -15,7 +15,7 @@ const testLimit = 650;
 // they cannot grow while follow-up refactors split them into bounded modules.
 const ratchets = {
   'apps/service/src/server.ts': 986,
-  'apps/service/src/store.ts': 3555,
+  'apps/service/src/store.ts': 3548,
   'packages/api/src/index.ts': 652,
   'src/App.tsx': 2038,
   'src/ProductionLedger.tsx': 633,

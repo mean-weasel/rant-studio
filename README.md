@@ -53,7 +53,8 @@ the human credential.
 No JSON or SQLite editing is required:
 
 1. Create a project in the browser.
-2. Upload a RIFF/WAVE narration file.
+2. Upload WAV or MP3 narration, or an MP4 video with an audio stream. Rant
+   Studio preserves the original and creates a managed PCM WAV working copy.
 3. Choose **Transcribe deterministically**. Timestamp JSON import is optional.
 4. Open editorial, correct a timestamped word if needed, and queue a
    revision-bound shot-planning task. In the external CLI, attach an agent,
@@ -138,7 +139,7 @@ reproduce the complete CI contract locally.
   invalid shot range.
 - FFmpeg errors: confirm both FFmpeg and ffprobe are on `PATH`; the last valid
   artifact remains untouched.
-- V1 accepts WAV narration and PNG/MP4 visuals. It has one local creator, hard
+- V1 accepts WAV/MP3/MP4 narration and PNG/MP4 visuals. It has one local creator, hard
   cuts, deterministic local rendering, and no hosted collaboration, recording,
   web search, generation provider, YouTube publishing, or mobile-native app.
 

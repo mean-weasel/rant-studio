@@ -126,7 +126,7 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
     await page.getByRole('button', { name: 'Create project' }).click();
     projectId = (await page.locator('.intake-project code').textContent())!;
 
-    await page.getByLabel('Narration WAV').setInputFiles(narrationPath);
+    await page.getByLabel('Narration file').setInputFiles(narrationPath);
     await page.getByRole('button', { name: 'Upload narration' }).click();
     await page
       .getByRole('button', { name: 'Transcribe deterministically' })

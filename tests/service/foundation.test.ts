@@ -76,7 +76,7 @@ test('fresh migration creates the complete schema once and persists a project re
         version: number;
       }>
     ).map(({ version }) => version),
-    [1, 2, 3, 4, 5, 6, 7, 8],
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
   );
   database.close();
 
