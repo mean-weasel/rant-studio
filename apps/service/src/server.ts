@@ -39,7 +39,10 @@ const operationScopes: Record<ProjectOperation, string> = {
 
 function assertScope(scopes: string[], required: string): void {
   if (scopes.includes('project:*') || scopes.includes(required)) return;
-  throw new StoreError('FORBIDDEN', `Credential requires the ${required} scope`);
+  throw new StoreError(
+    'FORBIDDEN',
+    `Credential requires the ${required} scope`,
+  );
 }
 
 function json(response: ServerResponse, status: number, value: unknown): void {
@@ -47,11 +50,16 @@ function json(response: ServerResponse, status: number, value: unknown): void {
   response.end(JSON.stringify(value));
 }
 
-async function readJson(request: AsyncIterable<Buffer>): Promise<Record<string, unknown>> {
+async function readJson(
+  request: AsyncIterable<Buffer>,
+): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) chunks.push(Buffer.from(chunk));
   if (chunks.length === 0) return {};
-  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
+  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<
+    string,
+    unknown
+  >;
 }
 
 function statusFor(error: unknown): number {
@@ -165,7 +173,11 @@ export async function startLocalService(options: {
       );
       if (projectMatch && request.method === 'GET' && !projectMatch[2]) {
         assertScope(identity.scopes, 'project:read');
-        json(response, 200, options.store.getProject(decodeURIComponent(projectMatch[1])));
+        json(
+          response,
+          200,
+          options.store.getProject(decodeURIComponent(projectMatch[1])),
+        );
         return;
       }
       if (projectMatch?.[2] === 'mutations' && request.method === 'POST') {
@@ -173,7 +185,10 @@ export async function startLocalService(options: {
         const operation = body.operation as ProjectOperation;
         const requiredScope = operationScopes[operation];
         if (!requiredScope) {
-          throw new StoreError('FORBIDDEN', `Unknown project operation: ${String(operation)}`);
+          throw new StoreError(
+            'FORBIDDEN',
+            `Unknown project operation: ${String(operation)}`,
+          );
         }
         assertScope(identity.scopes, requiredScope);
         json(
@@ -197,7 +212,8 @@ export async function startLocalService(options: {
         const projectId = decodeURIComponent(projectMatch[1]);
         const body = await readJson(request);
         const format = String(body.format ?? '') as OutputFormat;
-        const shotId = typeof body.shotId === 'string' ? body.shotId : undefined;
+        const shotId =
+          typeof body.shotId === 'string' ? body.shotId : undefined;
         const plan = options.store.getPreviewPlan({
           expectedRevision: Number(body.expectedRevision),
           format,
@@ -222,12 +238,20 @@ export async function startLocalService(options: {
       const projectId = projectMatch?.[1]
         ? decodeURIComponent(projectMatch[1])
         : undefined;
-      if (projectId && projectMatch?.[2] === 'intake' && request.method === 'GET') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'intake' &&
+        request.method === 'GET'
+      ) {
         assertScope(identity.scopes, 'project:read');
         json(response, 200, options.store.getIntakeProject(projectId));
         return;
       }
-      if (projectId && projectMatch?.[2] === 'audio' && request.method === 'POST') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'audio' &&
+        request.method === 'POST'
+      ) {
         assertScope(identity.scopes, operationScopes.ingest_narration);
         const body = await readJson(request);
         json(
@@ -244,7 +268,11 @@ export async function startLocalService(options: {
         );
         return;
       }
-      if (projectId && projectMatch?.[2] === 'audio-path' && request.method === 'POST') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'audio-path' &&
+        request.method === 'POST'
+      ) {
         assertScope(identity.scopes, operationScopes.ingest_narration);
         const body = await readJson(request);
         json(
@@ -279,17 +307,29 @@ export async function startLocalService(options: {
         );
         return;
       }
-      if (projectId && projectMatch?.[2] === 'ledger' && request.method === 'GET') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'ledger' &&
+        request.method === 'GET'
+      ) {
         assertScope(identity.scopes, 'project:read');
         json(response, 200, options.store.getLedgerProject(projectId));
         return;
       }
-      if (projectId && projectMatch?.[2] === 'assets' && request.method === 'GET') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'assets' &&
+        request.method === 'GET'
+      ) {
         assertScope(identity.scopes, 'project:read');
         json(response, 200, options.store.getAssetProject(projectId));
         return;
       }
-      if (projectId && projectMatch?.[2] === 'media' && request.method === 'GET') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'media' &&
+        request.method === 'GET'
+      ) {
         assertScope(identity.scopes, 'project:read');
         json(response, 200, options.store.getMediaProject(projectId));
         return;
@@ -340,12 +380,18 @@ export async function startLocalService(options: {
             expectedRevision: Number(body.expectedRevision),
             instruction: String(body.instruction ?? ''),
             projectId,
-            shotIds: Array.isArray(body.shotIds) ? body.shotIds.map(String) : [],
+            shotIds: Array.isArray(body.shotIds)
+              ? body.shotIds.map(String)
+              : [],
           }),
         );
         return;
       }
-      if (projectId && projectMatch?.[2] === 'activity' && request.method === 'GET') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'activity' &&
+        request.method === 'GET'
+      ) {
         assertScope(identity.scopes, 'project:read');
         json(
           response,
@@ -511,7 +557,11 @@ export async function startLocalService(options: {
         );
         return;
       }
-      if (projectId && projectMatch?.[2] === 'editorial' && request.method === 'GET') {
+      if (
+        projectId &&
+        projectMatch?.[2] === 'editorial' &&
+        request.method === 'GET'
+      ) {
         assertScope(identity.scopes, 'project:read');
         json(response, 200, options.store.getEditorialProject(projectId));
         return;
@@ -828,7 +878,9 @@ export async function startLocalService(options: {
           options.store.submitShotProposal({
             actor: identity.actor,
             baseProjectRevision: Number(body.baseProjectRevision),
-            baseTranscriptRevisionId: String(body.baseTranscriptRevisionId ?? ''),
+            baseTranscriptRevisionId: String(
+              body.baseTranscriptRevisionId ?? '',
+            ),
             credentialHash: identity.credentialHash,
             projectId: decodeURIComponent(submitMatch[1]),
             shots: Array.isArray(body.shots) ? (body.shots as never) : [],
@@ -840,10 +892,7 @@ export async function startLocalService(options: {
       const proposalActionMatch = url.pathname.match(
         /^\/v1\/projects\/([^/]+)\/proposals\/([^/]+)\/(accept|adjust|reject)$/,
       );
-      if (
-        proposalActionMatch?.[3] === 'accept' &&
-        request.method === 'POST'
-      ) {
+      if (proposalActionMatch?.[3] === 'accept' && request.method === 'POST') {
         assertScope(identity.scopes, operationScopes.accept_proposal);
         const body = await readJson(request);
         json(
@@ -858,10 +907,7 @@ export async function startLocalService(options: {
         );
         return;
       }
-      if (
-        proposalActionMatch?.[3] === 'adjust' &&
-        request.method === 'POST'
-      ) {
+      if (proposalActionMatch?.[3] === 'adjust' && request.method === 'POST') {
         assertScope(identity.scopes, operationScopes.adjust_proposal);
         const body = await readJson(request);
         json(
@@ -876,10 +922,7 @@ export async function startLocalService(options: {
         );
         return;
       }
-      if (
-        proposalActionMatch?.[3] === 'reject' &&
-        request.method === 'POST'
-      ) {
+      if (proposalActionMatch?.[3] === 'reject' && request.method === 'POST') {
         assertScope(identity.scopes, operationScopes.reject_proposal);
         json(
           response,

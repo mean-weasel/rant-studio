@@ -9,3 +9,6 @@ test-results/
 *.db-wal
 .DS_Store
 .rant-studio/
+.vite/
+.eslintcache
+playwright-report/

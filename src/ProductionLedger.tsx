@@ -61,7 +61,7 @@ export function ProductionLedger({
         setSelectedId((current) =>
           current && next.shots.some((shot) => shot.id === current)
             ? current
-            : next.shots[0]?.id ?? null,
+            : (next.shots[0]?.id ?? null),
         );
         onRevision(next.revision);
         requestAnimationFrame(() => {
@@ -101,7 +101,9 @@ export function ProductionLedger({
     const normalizedQuery = query.trim().toLowerCase();
     const activeStatuses = new Set(['queued', 'claimed', 'running', 'waiting']);
     return ledger.shots.filter((shot) => {
-      const shotAssets = assets?.shots.find((candidate) => candidate.id === shot.id);
+      const shotAssets = assets?.shots.find(
+        (candidate) => candidate.id === shot.id,
+      );
       const hasSelection = Boolean(shotAssets?.selectedAssetId);
       const hasCandidates = Boolean(shotAssets?.candidates.length);
       const hasActiveTask = Boolean(
@@ -126,7 +128,8 @@ export function ProductionLedger({
         .toLowerCase();
       if (normalizedQuery && !haystack.includes(normalizedQuery)) return false;
       if (visualFilter === 'selected' && !hasSelection) return false;
-      if (visualFilter === 'candidates' && (!hasCandidates || hasSelection)) return false;
+      if (visualFilter === 'candidates' && (!hasCandidates || hasSelection))
+        return false;
       if (visualFilter === 'missing' && hasCandidates) return false;
       if (taskFilter === 'active' && !hasActiveTask) return false;
       if (taskFilter === 'none' && hasActiveTask) return false;
@@ -186,17 +189,16 @@ export function ProductionLedger({
       setSelectedId((current) =>
         current && next.shots.some((shot) => shot.id === current)
           ? current
-          : next.shots[0]?.id ?? null,
+          : (next.shots[0]?.id ?? null),
       );
       setStatus(`${message} Revision ${next.revision}.`);
       onRevision(next.revision);
       requestAnimationFrame(() => {
-        const target =
-          rowRefs.current.get(
-            next.shots.some((shot) => shot.id === selectedId)
-              ? selectedId ?? ''
-              : next.shots[0]?.id ?? '',
-          );
+        const target = rowRefs.current.get(
+          next.shots.some((shot) => shot.id === selectedId)
+            ? (selectedId ?? '')
+            : (next.shots[0]?.id ?? ''),
+        );
         target?.focus();
       });
     } catch (error) {
@@ -211,7 +213,9 @@ export function ProductionLedger({
       <section className="intake-card">
         <p className="eyebrow">Accepted edit</p>
         <h3>Production Shot Ledger</h3>
-        <p>Stable IDs, ancestry, history, checkpoints, and revision-safe edits.</p>
+        <p>
+          Stable IDs, ancestry, history, checkpoints, and revision-safe edits.
+        </p>
         <button type="button" disabled={busy} onClick={load}>
           Open production Shot Ledger
         </button>
@@ -233,7 +237,11 @@ export function ProductionLedger({
           </button>
           <button
             type="button"
-            disabled={busy || ledger.history.filter((item) => item.operation === 'change_shots').length === 0}
+            disabled={
+              busy ||
+              ledger.history.filter((item) => item.operation === 'change_shots')
+                .length === 0
+            }
             onClick={async () => {
               setBusy(true);
               try {
@@ -244,7 +252,9 @@ export function ProductionLedger({
                 setStatus(`Undo restored revision ${next.revision}.`);
                 onRevision(next.revision);
               } catch (error) {
-                setStatus(error instanceof Error ? error.message : 'Undo failed');
+                setStatus(
+                  error instanceof Error ? error.message : 'Undo failed',
+                );
               } finally {
                 setBusy(false);
               }
@@ -273,10 +283,13 @@ export function ProductionLedger({
             if (!ledger) return;
             setBusy(true);
             try {
-              const checkpoint = await client.createLedgerCheckpoint(projectId, {
-                expectedRevision: ledger.revision,
-                name: checkpointName,
-              });
+              const checkpoint = await client.createLedgerCheckpoint(
+                projectId,
+                {
+                  expectedRevision: ledger.revision,
+                  name: checkpointName,
+                },
+              );
               setLedger(await client.getLedger(projectId));
               setCheckpointName('');
               setStatus(`Checkpoint “${checkpoint.name}” saved.`);
@@ -299,7 +312,9 @@ export function ProductionLedger({
                 { expectedRevision: ledger.revision },
               );
               setLedger(next);
-              setStatus(`Restored “${checkpoint.name}” at revision ${next.revision}.`);
+              setStatus(
+                `Restored “${checkpoint.name}” at revision ${next.revision}.`,
+              );
               onRevision(next.revision);
             }}
           >
@@ -308,12 +323,16 @@ export function ProductionLedger({
         ))}
       </div>
 
-      <section className="ledger-scale-controls" aria-labelledby="ledger-filter-heading">
+      <section
+        className="ledger-scale-controls"
+        aria-labelledby="ledger-filter-heading"
+      >
         <div>
           <h4 id="ledger-filter-heading">Find and filter shots</h4>
           <p role="status" aria-live="polite">
             Showing {filteredShots.length} of {ledger.shots.length} shots ·{' '}
-            {assets?.shots.filter((shot) => shot.selectedAssetId).length ?? 0} complete ·{' '}
+            {assets?.shots.filter((shot) => shot.selectedAssetId).length ?? 0}{' '}
+            complete ·{' '}
             {activity?.tasks.filter((task) =>
               ['queued', 'claimed', 'running', 'waiting'].includes(task.status),
             ).length ?? 0}{' '}
@@ -328,7 +347,8 @@ export function ProductionLedger({
             onChange={(event) => {
               setQuery(event.target.value);
               setWindowStart(0);
-              if (ledgerWindowRef.current) ledgerWindowRef.current.scrollTop = 0;
+              if (ledgerWindowRef.current)
+                ledgerWindowRef.current.scrollTop = 0;
             }}
             placeholder="ID, timing, transcript, or theme"
           />
@@ -430,19 +450,23 @@ export function ProductionLedger({
             ),
           );
         }}
-        style={{
-          '--ledger-after-space':
-            filteredShots.length > WINDOW_SIZE
-              ? `${(filteredShots.length - boundedStart - visibleShots.length) * rowHeight}px`
-              : '0px',
-          '--ledger-before-space':
-            filteredShots.length > WINDOW_SIZE
-              ? `${boundedStart * rowHeight}px`
-              : '0px',
-        } as CSSProperties}
+        style={
+          {
+            '--ledger-after-space':
+              filteredShots.length > WINDOW_SIZE
+                ? `${(filteredShots.length - boundedStart - visibleShots.length) * rowHeight}px`
+                : '0px',
+            '--ledger-before-space':
+              filteredShots.length > WINDOW_SIZE
+                ? `${boundedStart * rowHeight}px`
+                : '0px',
+          } as CSSProperties
+        }
       >
         {visibleShots.map((shot) => {
-          const index = ledger.shots.findIndex((candidate) => candidate.id === shot.id);
+          const index = ledger.shots.findIndex(
+            (candidate) => candidate.id === shot.id,
+          );
           const filteredIndex = filteredShots.findIndex(
             (candidate) => candidate.id === shot.id,
           );
@@ -454,99 +478,106 @@ export function ProductionLedger({
             (candidate) => candidate.id === shot.id,
           );
           return (
-          <li
-            key={shot.id}
-            ref={(node) => {
-              if (node) rowRefs.current.set(shot.id, node);
-              else rowRefs.current.delete(shot.id);
-            }}
-            tabIndex={-1}
-            aria-posinset={filteredIndex + 1}
-            aria-setsize={filteredShots.length}
-            data-shot-id={shot.id}
-            data-selected={selectedId === shot.id}
-            onClick={() => setSelectedId(shot.id)}
-          >
-            <div>
-              <span>Shot {index + 1}</span>
-              <code>{shot.id.slice(0, 8)}</code>
-            </div>
-            <div>
-              <strong>{shot.theme}</strong>
-              <p>
-                {shotWords[0]?.startMs ?? 0}–{shotWords.at(-1)?.endMs ?? 0} ms ·{' '}
-                {shotWords.map((word) => word.text).join(' ')}
-              </p>
-              <small>
-                {shotAssets?.selectedAssetId
-                  ? 'Complete · active visual selected'
-                  : shotAssets?.candidates.length
-                    ? `${shotAssets.candidates.length} candidates · incomplete`
-                    : 'Missing visual · incomplete'}
-              </small>
-            </div>
-            <div className="ledger-row-actions">
-              <button
-                type="button"
-                disabled={busy || index === 0}
-                onClick={() => {
-                  const ids = ledger.shots.map((item) => item.id);
-                  [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-                  void apply({ kind: 'reorder', shotIds: ids }, 'Shot moved.');
-                }}
-              >
-                Move up
-              </button>
-              <button
-                type="button"
-                disabled={busy || shot.endWordOrdinal === shot.startWordOrdinal}
-                onClick={() =>
-                  void apply(
-                    {
-                      atWordOrdinal:
-                        shot.startWordOrdinal +
-                        Math.ceil((shot.endWordOrdinal - shot.startWordOrdinal) / 2),
-                      kind: 'split',
-                      shotId: shot.id,
-                    },
-                    'Shot split with new ancestry.',
-                  )
-                }
-              >
-                Split
-              </button>
-              <button
-                type="button"
-                disabled={
-                  busy ||
-                  index === ledger.shots.length - 1 ||
-                  shot.endWordOrdinal + 1 !==
-                    ledger.shots[index + 1]!.startWordOrdinal
-                }
-                onClick={() =>
-                  void apply(
-                    {
-                      kind: 'merge',
-                      leftShotId: shot.id,
-                      rightShotId: ledger.shots[index + 1]!.id,
-                    },
-                    'Shots merged with ancestry.',
-                  )
-                }
-              >
-                Merge next
-              </button>
-              <button
-                type="button"
-                disabled={busy || ledger.shots.length === 1}
-                onClick={() =>
-                  void apply({ kind: 'cut', shotId: shot.id }, 'Shot cut.')
-                }
-              >
-                Cut
-              </button>
-            </div>
-          </li>
+            <li
+              key={shot.id}
+              ref={(node) => {
+                if (node) rowRefs.current.set(shot.id, node);
+                else rowRefs.current.delete(shot.id);
+              }}
+              tabIndex={-1}
+              aria-posinset={filteredIndex + 1}
+              aria-setsize={filteredShots.length}
+              data-shot-id={shot.id}
+              data-selected={selectedId === shot.id}
+              onClick={() => setSelectedId(shot.id)}
+            >
+              <div>
+                <span>Shot {index + 1}</span>
+                <code>{shot.id.slice(0, 8)}</code>
+              </div>
+              <div>
+                <strong>{shot.theme}</strong>
+                <p>
+                  {shotWords[0]?.startMs ?? 0}–{shotWords.at(-1)?.endMs ?? 0} ms
+                  · {shotWords.map((word) => word.text).join(' ')}
+                </p>
+                <small>
+                  {shotAssets?.selectedAssetId
+                    ? 'Complete · active visual selected'
+                    : shotAssets?.candidates.length
+                      ? `${shotAssets.candidates.length} candidates · incomplete`
+                      : 'Missing visual · incomplete'}
+                </small>
+              </div>
+              <div className="ledger-row-actions">
+                <button
+                  type="button"
+                  disabled={busy || index === 0}
+                  onClick={() => {
+                    const ids = ledger.shots.map((item) => item.id);
+                    [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+                    void apply(
+                      { kind: 'reorder', shotIds: ids },
+                      'Shot moved.',
+                    );
+                  }}
+                >
+                  Move up
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    busy || shot.endWordOrdinal === shot.startWordOrdinal
+                  }
+                  onClick={() =>
+                    void apply(
+                      {
+                        atWordOrdinal:
+                          shot.startWordOrdinal +
+                          Math.ceil(
+                            (shot.endWordOrdinal - shot.startWordOrdinal) / 2,
+                          ),
+                        kind: 'split',
+                        shotId: shot.id,
+                      },
+                      'Shot split with new ancestry.',
+                    )
+                  }
+                >
+                  Split
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    busy ||
+                    index === ledger.shots.length - 1 ||
+                    shot.endWordOrdinal + 1 !==
+                      ledger.shots[index + 1]!.startWordOrdinal
+                  }
+                  onClick={() =>
+                    void apply(
+                      {
+                        kind: 'merge',
+                        leftShotId: shot.id,
+                        rightShotId: ledger.shots[index + 1]!.id,
+                      },
+                      'Shots merged with ancestry.',
+                    )
+                  }
+                >
+                  Merge next
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || ledger.shots.length === 1}
+                  onClick={() =>
+                    void apply({ kind: 'cut', shotId: shot.id }, 'Shot cut.')
+                  }
+                >
+                  Cut
+                </button>
+              </div>
+            </li>
           );
         })}
       </ol>
@@ -588,7 +619,10 @@ export function ProductionLedger({
           );
           requestAnimationFrame(() => {
             if (ledgerWindowRef.current) {
-              ledgerWindowRef.current.scrollTop = Math.max(0, index * rowHeight);
+              ledgerWindowRef.current.scrollTop = Math.max(
+                0,
+                index * rowHeight,
+              );
             }
             rowRefs.current.get(returnShotId)?.focus();
           });

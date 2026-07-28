@@ -41,7 +41,10 @@ Recovery:
   Reattach and reclaim after DETACHED_AGENT or an interrupted lease.
   Only the browser-side human may accept proposals, select visuals, or export.`;
 
-export async function runCli(args: string[], context: CliContext): Promise<number> {
+export async function runCli(
+  args: string[],
+  context: CliContext,
+): Promise<number> {
   const client = new RantClient({
     baseUrl: context.baseUrl,
     credential: context.credential,
@@ -93,9 +96,7 @@ export async function runCli(args: string[], context: CliContext): Promise<numbe
       const sessionId = option(args, '--session');
       if (!sessionId) throw new Error('task claim requires --session');
       context.write(
-        JSON.stringify(
-          await client.claimTask(args[2], args[3], { sessionId }),
-        ),
+        JSON.stringify(await client.claimTask(args[2], args[3], { sessionId })),
       );
       return 0;
     }
@@ -125,11 +126,15 @@ export async function runCli(args: string[], context: CliContext): Promise<numbe
       const shots = option(args, '--shots');
       const filePath = option(args, '--file');
       if (!Number.isInteger(revision) || !shots || !filePath) {
-        throw new Error('asset attach requires --revision, --shots, and --file');
+        throw new Error(
+          'asset attach requires --revision, --shots, and --file',
+        );
       }
       const fileStat = await lstat(filePath);
       if (fileStat.isSymbolicLink() || !fileStat.isFile()) {
-        throw new Error('asset attach --file must be a regular file, not a symbolic link');
+        throw new Error(
+          'asset attach --file must be a regular file, not a symbolic link',
+        );
       }
       const extension = extname(filePath).toLowerCase();
       if (extension !== '.png' && extension !== '.mp4') {
@@ -206,7 +211,9 @@ export async function runCli(args: string[], context: CliContext): Promise<numbe
     ) {
       const shotCount = Number(option(args, '--shots'));
       if (!Number.isInteger(shotCount) || shotCount < 1) {
-        throw new Error('proposal submit-chronological requires --shots <positive-count>');
+        throw new Error(
+          'proposal submit-chronological requires --shots <positive-count>',
+        );
       }
       const editorial = await client.getEditorial(args[2]);
       const words = editorial.effectiveTranscript.words;
@@ -253,7 +260,9 @@ export async function runCli(args: string[], context: CliContext): Promise<numbe
     return 2;
   } catch (error) {
     if (error instanceof RantApiError) {
-      context.write(JSON.stringify({ error: { code: error.code, message: error.message } }));
+      context.write(
+        JSON.stringify({ error: { code: error.code, message: error.message } }),
+      );
       return 1;
     }
     context.write(
@@ -261,7 +270,8 @@ export async function runCli(args: string[], context: CliContext): Promise<numbe
         error: {
           code: error instanceof SyntaxError ? 'MALFORMED_INPUT' : 'CLI_INPUT',
           message: error instanceof Error ? error.message : 'Invalid CLI input',
-          recovery: 'Run rant help, refresh shared state, and retry with explicit project, revision, and target IDs.',
+          recovery:
+            'Run rant help, refresh shared state, and retry with explicit project, revision, and target IDs.',
         },
       }),
     );

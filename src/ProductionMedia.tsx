@@ -67,7 +67,7 @@ export function ProductionMedia({
         setShotId((current) =>
           next.shots.some((candidate) => candidate.id === current)
             ? current
-            : next.shots[0]?.id ?? '',
+            : (next.shots[0]?.id ?? ''),
         );
         setAllowPlaceholders(false);
         setStatus(
@@ -88,7 +88,9 @@ export function ProductionMedia({
       setStatus(`Preview and preflight loaded at revision ${next.revision}.`);
       onRevision(next.revision);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Media workspace failed');
+      setStatus(
+        error instanceof Error ? error.message : 'Media workspace failed',
+      );
     } finally {
       setBusy(false);
     }
@@ -104,7 +106,10 @@ export function ProductionMedia({
       <section className="intake-card">
         <p className="eyebrow">Preview and output</p>
         <h3>Revision-bound media</h3>
-        <p>Inspect shots, preflight both formats, then authorize a durable render.</p>
+        <p>
+          Inspect shots, preflight both formats, then authorize a durable
+          render.
+        </p>
         <button type="button" disabled={busy} onClick={load}>
           Open preview and export
         </button>
@@ -138,7 +143,9 @@ export function ProductionMedia({
       onRevision(updated.revision);
     } catch (error) {
       pendingLocalRevisions.current.delete(expectedLocalRevision);
-      setStatus(error instanceof Error ? error.message : 'Output setting failed');
+      setStatus(
+        error instanceof Error ? error.message : 'Output setting failed',
+      );
       if (deferredPendingEvents.current.delete(expectedLocalRevision)) {
         void client.getMedia(projectId).then((next) => {
           if (next.revision <= currentRevision.current) return;
@@ -147,7 +154,7 @@ export function ProductionMedia({
           setShotId((current) =>
             next.shots.some((candidate) => candidate.id === current)
               ? current
-              : next.shots[0]?.id ?? '',
+              : (next.shots[0]?.id ?? ''),
           );
           setAllowPlaceholders(false);
           setStatus(
@@ -192,7 +199,9 @@ export function ProductionMedia({
     <section className="production-media" aria-labelledby="media-heading">
       <header className="editorial-heading">
         <div>
-          <p className="eyebrow">Immutable revision {media.preflight.baseRevision}</p>
+          <p className="eyebrow">
+            Immutable revision {media.preflight.baseRevision}
+          </p>
           <h3 id="media-heading">Preview, preflight, and render</h3>
         </div>
         <button type="button" disabled={busy} onClick={load}>
@@ -209,7 +218,9 @@ export function ProductionMedia({
             Preview format
             <select
               value={previewFormat}
-              onChange={(event) => setPreviewFormat(event.target.value as OutputFormat)}
+              onChange={(event) =>
+                setPreviewFormat(event.target.value as OutputFormat)
+              }
             >
               <option value="landscape">16:9 landscape</option>
               <option value="vertical">9:16 vertical</option>
@@ -217,7 +228,10 @@ export function ProductionMedia({
           </label>
           <label>
             Preview shot
-            <select value={shotId} onChange={(event) => setShotId(event.target.value)}>
+            <select
+              value={shotId}
+              onChange={(event) => setShotId(event.target.value)}
+            >
               {media.shots.map((candidate, index) => (
                 <option key={candidate.id} value={candidate.id}>
                   Shot {index + 1} · {candidate.theme}
@@ -226,9 +240,14 @@ export function ProductionMedia({
             </select>
           </label>
           {shot ? (
-            <article className="shot-preview" data-missing={!shot.selectedAsset}>
+            <article
+              className="shot-preview"
+              data-missing={!shot.selectedAsset}
+            >
               <strong>
-                {shot.selectedAsset ? 'Selected visual preview' : 'MISSING VISUAL'}
+                {shot.selectedAsset
+                  ? 'Selected visual preview'
+                  : 'MISSING VISUAL'}
               </strong>
               <span>
                 Source {shot.startMs}–{shot.endMs} ms
@@ -237,21 +256,34 @@ export function ProductionMedia({
               <button type="button" onClick={() => onReturnToShot(shot.id)}>
                 Return to this ledger shot
               </button>
-              <button type="button" disabled={busy} onClick={() => void playPreview('shot')}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void playPreview('shot')}
+              >
                 Play selected shot
               </button>
             </article>
           ) : null}
-          <button type="button" disabled={busy} onClick={() => void playPreview('assembly')}>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void playPreview('assembly')}
+          >
             Play assembled edit
           </button>
           {previewUrl ? (
             <div className="playable-preview">
               <strong>
-                {previewScope === 'shot' ? 'Individual shot' : 'Assembled edit'} ·
-                revision {previewRevision}
+                {previewScope === 'shot' ? 'Individual shot' : 'Assembled edit'}{' '}
+                · revision {previewRevision}
               </strong>
-              <video className="render-preview" controls autoPlay src={previewUrl}>
+              <video
+                className="render-preview"
+                controls
+                autoPlay
+                src={previewUrl}
+              >
                 Revision-bound commentary preview
               </video>
             </div>
@@ -264,7 +296,9 @@ export function ProductionMedia({
                 return (
                   <fieldset key={format}>
                     <legend>
-                      {format === 'landscape' ? '16:9 landscape' : '9:16 vertical'}
+                      {format === 'landscape'
+                        ? '16:9 landscape'
+                        : '9:16 vertical'}
                     </legend>
                     <label>
                       Fit
@@ -362,7 +396,9 @@ export function ProductionMedia({
                 expectedRevision: media.revision,
                 formats,
               });
-              setStatus(`Render ${queued.id.slice(0, 8)} queued; running locally…`);
+              setStatus(
+                `Render ${queued.id.slice(0, 8)} queued; running locally…`,
+              );
               const completed = await client.runRenderJob(projectId, queued.id);
               const next = await client.getMedia(projectId);
               currentRevision.current = next.revision;
@@ -373,15 +409,21 @@ export function ProductionMedia({
                   : `Render failed: ${completed.errorMessage}`,
               );
               const artifact =
-                completed.artifacts.find((candidate) => candidate.format === 'landscape') ??
-                completed.artifacts[0];
+                completed.artifacts.find(
+                  (candidate) => candidate.format === 'landscape',
+                ) ?? completed.artifacts[0];
               if (artifact) {
-                const blob = await client.getRenderArtifact(projectId, artifact.id);
+                const blob = await client.getRenderArtifact(
+                  projectId,
+                  artifact.id,
+                );
                 if (artifactUrl) URL.revokeObjectURL(artifactUrl);
                 setArtifactUrl(URL.createObjectURL(blob));
               }
             } catch (error) {
-              setStatus(error instanceof Error ? error.message : 'Render failed');
+              setStatus(
+                error instanceof Error ? error.message : 'Render failed',
+              );
             } finally {
               setBusy(false);
             }

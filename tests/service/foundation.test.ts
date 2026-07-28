@@ -61,13 +61,18 @@ test('fresh migration creates the complete schema once and persists a project re
 
   const database = new Database(databasePath);
   const tableRows = database
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+    )
     .all() as Array<{ name: string }>;
   const tableNames = tableRows.map(({ name }) => name);
-  for (const table of requiredTables) assert.ok(tableNames.includes(table), table);
+  for (const table of requiredTables)
+    assert.ok(tableNames.includes(table), table);
   assert.deepEqual(
     (
-      database.prepare('SELECT version FROM migrations ORDER BY version').all() as Array<{
+      database
+        .prepare('SELECT version FROM migrations ORDER BY version')
+        .all() as Array<{
         version: number;
       }>
     ).map(({ version }) => version),
@@ -114,7 +119,9 @@ test('mutations are transactional, revision checked, authority checked, secret s
         projectId: project.id,
       }),
     (error: unknown) =>
-      error instanceof Error && 'code' in error && error.code === 'REVISION_CONFLICT',
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'REVISION_CONFLICT',
   );
   assert.equal(store.getProject(project.id).revision, 1);
 
@@ -128,7 +135,9 @@ test('mutations are transactional, revision checked, authority checked, secret s
         projectId: project.id,
       }),
     (error: unknown) =>
-      error instanceof Error && 'code' in error && error.code === 'SECRET_MATERIAL',
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'SECRET_MATERIAL',
   );
 
   const result = store.applyMutation({
@@ -152,8 +161,14 @@ test('mutations are transactional, revision checked, authority checked, secret s
 test('loopback service gives browser and CLI clients one revision truth with revocable credentials', async () => {
   const databasePath = await temporaryDatabase();
   const store = openProjectStore(databasePath);
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
-  const agentCredential = store.issueCredential({ role: 'agent', scopes: ['project:read', 'note:add'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
+  const agentCredential = store.issueCredential({
+    role: 'agent',
+    scopes: ['project:read', 'note:add'],
+  });
   const service = await startLocalService({ port: 0, store });
   assert.match(service.url, /^http:\/\/127\.0\.0\.1:/);
 
@@ -189,7 +204,9 @@ test('loopback service gives browser and CLI clients one revision truth with rev
   await assert.rejects(
     cliClient.getProject(created.id),
     (error: unknown) =>
-      error instanceof Error && 'code' in error && error.code === 'UNAUTHORIZED',
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'UNAUTHORIZED',
   );
 
   await service.close();
@@ -225,17 +242,30 @@ test('loopback CORS accepts localhost subdomains and rejects lookalike hosts', a
 test('authenticated service event subscription streams project revisions and reconnects', async () => {
   const databasePath = await temporaryDatabase();
   const store = openProjectStore(databasePath);
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: ['project:read', 'note:add'],
   });
   const service = await startLocalService({ port: 0, store });
-  const human = new RantClient({ baseUrl: service.url, credential: humanCredential.token });
-  const agent = new RantClient({ baseUrl: service.url, credential: agentCredential.token });
+  const human = new RantClient({
+    baseUrl: service.url,
+    credential: humanCredential.token,
+  });
+  const agent = new RantClient({
+    baseUrl: service.url,
+    credential: agentCredential.token,
+  });
   try {
     const project = await human.createProject('Live revision');
-    const events: Array<{ operation: string; projectId: string; revision: number }> = [];
+    const events: Array<{
+      operation: string;
+      projectId: string;
+      revision: number;
+    }> = [];
     const stop = human.subscribeEvents((event) => events.push(event));
     await new Promise((resolve) => setTimeout(resolve, 20));
     await agent.mutateProject(project.id, {
@@ -244,7 +274,10 @@ test('authenticated service event subscription streams project revisions and rec
       payload: { note: 'External CLI event.' },
     });
     await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('event was not delivered')), 2_000);
+      const timeout = setTimeout(
+        () => reject(new Error('event was not delivered')),
+        2_000,
+      );
       const poll = setInterval(() => {
         if (events.length === 0) return;
         clearInterval(poll);
@@ -265,7 +298,10 @@ test('authenticated service event subscription streams project revisions and rec
 test('loopback credentials enforce scopes in addition to role authority', async () => {
   const databasePath = await temporaryDatabase();
   const store = openProjectStore(databasePath);
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const readOnlyCredential = store.issueCredential({
     role: 'agent',
     scopes: ['project:read'],
@@ -287,7 +323,9 @@ test('loopback credentials enforce scopes in addition to role authority', async 
       readOnlyClient.mutateProject(project.id, {
         expectedRevision: project.revision,
         operation: 'add_note',
-        payload: { note: 'The role allows this, but the token scope does not.' },
+        payload: {
+          note: 'The role allows this, but the token scope does not.',
+        },
       }),
       (error: unknown) =>
         error instanceof Error && 'code' in error && error.code === 'FORBIDDEN',

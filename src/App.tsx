@@ -44,7 +44,8 @@ const shots: Shot[] = [
     id: '02',
     source: '00:12.4–00:20.2',
     duration: '7.8s',
-    transcript: 'Every one of them arrives with a tiny promise: this will make your life simpler.',
+    transcript:
+      'Every one of them arrives with a tiny promise: this will make your life simpler.',
     theme: 'The promise',
     visual: 'candidates',
   },
@@ -52,7 +53,8 @@ const shots: Shot[] = [
     id: '03',
     source: '00:20.2–00:28.9',
     duration: '8.7s',
-    transcript: 'But stack enough tiny conveniences together and suddenly you have another utility bill.',
+    transcript:
+      'But stack enough tiny conveniences together and suddenly you have another utility bill.',
     theme: 'The accumulation',
     visual: 'missing',
   },
@@ -60,7 +62,8 @@ const shots: Shot[] = [
     id: '04',
     source: '00:28.9–00:35.8',
     duration: '6.9s',
-    transcript: 'The price is not just money. It is the low hum of remembering what renews when.',
+    transcript:
+      'The price is not just money. It is the low hum of remembering what renews when.',
     theme: 'The hidden cost',
     visual: 'missing',
   },
@@ -149,13 +152,15 @@ export function App() {
   const [inspectedAsset, setInspectedAsset] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('landscape');
-  const [formatFit, setFormatFit] = useState<Record<OutputFormat, 'cover' | 'contain'>>({
+  const [formatFit, setFormatFit] = useState<
+    Record<OutputFormat, 'cover' | 'contain'>
+  >({
     landscape: 'cover',
     vertical: 'cover',
   });
-  const [exportStage, setExportStage] = useState<'preflight' | 'confirm' | 'done' | null>(
-    null,
-  );
+  const [exportStage, setExportStage] = useState<
+    'preflight' | 'confirm' | 'done' | null
+  >(null);
   const [placeholderConfirmed, setPlaceholderConfirmed] = useState(false);
   const [historyItems, setHistoryItems] = useState<string[]>([]);
   const [proposalReceipt, setProposalReceipt] = useState<Pacing | null>(null);
@@ -171,7 +176,8 @@ export function App() {
 
   useEffect(
     () => () => {
-      if (agentTaskTimer.current !== null) window.clearTimeout(agentTaskTimer.current);
+      if (agentTaskTimer.current !== null)
+        window.clearTimeout(agentTaskTimer.current);
     },
     [],
   );
@@ -182,7 +188,9 @@ export function App() {
       return;
     }
     const frame = window.requestAnimationFrame(() => {
-      const heading = document.querySelector<HTMLElement>('[data-workspace-heading]');
+      const heading = document.querySelector<HTMLElement>(
+        '[data-workspace-heading]',
+      );
       if (!heading) return;
       heading.focus({ preventScroll: true });
       heading.scrollIntoView({ block: 'start' });
@@ -191,7 +199,9 @@ export function App() {
   }, [phase, view]);
 
   const selected = useMemo(
-    () => acceptedShots.find((shot) => shot.id === selectedShot) ?? acceptedShots[0],
+    () =>
+      acceptedShots.find((shot) => shot.id === selectedShot) ??
+      acceptedShots[0],
     [acceptedShots, selectedShot],
   );
 
@@ -223,7 +233,9 @@ export function App() {
     }));
     setHistoryItems((current) => [
       `Visual selected for Shot ${shotId}`,
-      ...current.filter((item) => item !== `Visual selected for Shot ${shotId}`),
+      ...current.filter(
+        (item) => item !== `Visual selected for Shot ${shotId}`,
+      ),
     ]);
   }
 
@@ -381,19 +393,24 @@ export function App() {
         </div>
       </header>
 
-      <nav aria-label="Mobile project controls" className="mobile-project-controls">
+      <nav
+        aria-label="Mobile project controls"
+        className="mobile-project-controls"
+      >
         <div className="mobile-view-links">
-          {(['Edit', 'Activity', 'History', 'Settings'] as View[]).map((item) => (
-            <button
-              aria-current={item === view ? 'page' : undefined}
-              className={item === view ? 'nav-item active' : 'nav-item'}
-              key={item}
-              onClick={() => setView(item)}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
+          {(['Edit', 'Activity', 'History', 'Settings'] as View[]).map(
+            (item) => (
+              <button
+                aria-current={item === view ? 'page' : undefined}
+                className={item === view ? 'nav-item active' : 'nav-item'}
+                key={item}
+                onClick={() => setView(item)}
+                type="button"
+              >
+                {item}
+              </button>
+            ),
+          )}
         </div>
         <div className="mobile-project-actions">
           <span className="mobile-agent-label">
@@ -466,8 +483,8 @@ export function App() {
               Codex is reading 84 timestamped words
             </h2>
             <p>
-              Applying {pacing.toLowerCase()} pacing while preserving every word in chronological
-              order.
+              Applying {pacing.toLowerCase()} pacing while preserving every word
+              in chronological order.
             </p>
             <div className="progress-track">
               <div />
@@ -496,7 +513,9 @@ export function App() {
             lastAgentShot={lastAgentShot}
             onAskAgent={(shotId) => {
               setSelectedShot(shotId);
-              setAgentInstruction(`Find visual candidates for Shot ${shotId} without selecting one.`);
+              setAgentInstruction(
+                `Find visual candidates for Shot ${shotId} without selecting one.`,
+              );
             }}
             onAgentInstruction={setAgentInstruction}
             onInspectAsset={setInspectedAsset}
@@ -512,7 +531,10 @@ export function App() {
           />
         )}
         {view === 'Activity' && (
-          <ActivityView proposalPacing={proposalReceipt} receipt={taskReceipt} />
+          <ActivityView
+            proposalPacing={proposalReceipt}
+            receipt={taskReceipt}
+          />
         )}
         {view === 'History' && <HistoryView items={historyItems} />}
         {view === 'Settings' && (
@@ -531,7 +553,10 @@ export function App() {
         />
       )}
       {inspectedAsset && (
-        <ProvenanceDialog assetName={inspectedAsset} onClose={() => setInspectedAsset(null)} />
+        <ProvenanceDialog
+          assetName={inspectedAsset}
+          onClose={() => setInspectedAsset(null)}
+        />
       )}
       {previewOpen && (
         <PreviewDialog
@@ -584,7 +609,11 @@ function TranscriptWorkspace(props: {
             </h2>
             <p>84 words · word-level timing · one continuous source</p>
           </div>
-          <button className="quiet-button" onClick={props.onBeginCorrection} type="button">
+          <button
+            className="quiet-button"
+            onClick={props.onBeginCorrection}
+            type="button"
+          >
             Correct transcript
           </button>
         </header>
@@ -605,8 +634,12 @@ function TranscriptWorkspace(props: {
         </div>
 
         <div className="transcript-status">
-          <span className={props.corrected ? 'correction-badge' : 'source-badge'}>
-            {props.corrected ? 'Corrected · timing unchanged' : 'Original provider text'}
+          <span
+            className={props.corrected ? 'correction-badge' : 'source-badge'}
+          >
+            {props.corrected
+              ? 'Corrected · timing unchanged'
+              : 'Original provider text'}
           </span>
           <span>00:00.0–00:42.0</span>
         </div>
@@ -622,10 +655,18 @@ function TranscriptWorkspace(props: {
             />
             <p>The audio and original word timestamps will not change.</p>
             <div className="button-row">
-              <button className="quiet-button" onClick={props.onCancelCorrection} type="button">
+              <button
+                className="quiet-button"
+                onClick={props.onCancelCorrection}
+                type="button"
+              >
                 Cancel
               </button>
-              <button className="primary-button" onClick={props.onSaveCorrection} type="button">
+              <button
+                className="primary-button"
+                onClick={props.onSaveCorrection}
+                type="button"
+              >
                 Save correction
               </button>
             </div>
@@ -639,25 +680,29 @@ function TranscriptWorkspace(props: {
             <p>
               <time>00:12</time>
               <span>
-                Every one of them arrives with a tiny promise: this will make your life simpler.
+                Every one of them arrives with a tiny promise: this will make
+                your life simpler.
               </span>
             </p>
             <p>
               <time>00:20</time>
               <span>
-                But stack enough tiny conveniences together and suddenly you have another utility
-                bill.
+                But stack enough tiny conveniences together and suddenly you
+                have another utility bill.
               </span>
             </p>
             <p>
               <time>00:29</time>
               <span>
-                The price is not just money. It is the low hum of remembering what renews when.
+                The price is not just money. It is the low hum of remembering
+                what renews when.
               </span>
             </p>
             <p>
               <time>00:36</time>
-              <span>Maybe the premium feature we actually need is an ending.</span>
+              <span>
+                Maybe the premium feature we actually need is an ending.
+              </span>
             </p>
           </div>
         )}
@@ -668,15 +713,19 @@ function TranscriptWorkspace(props: {
         <span className="eyebrow">EDITORIAL START</span>
         <h2>Turn narration into shots</h2>
         <p>
-          The transcript stays untouched until you ask your attached agent for a chronological
-          proposal.
+          The transcript stays untouched until you ask your attached agent for a
+          chronological proposal.
         </p>
         <ul>
           <li>Every spoken word remains covered</li>
           <li>Natural rhetorical beats guide boundaries</li>
           <li>Nothing changes before your approval</li>
         </ul>
-        <button className="primary-button large" onClick={props.onPropose} type="button">
+        <button
+          className="primary-button large"
+          onClick={props.onPropose}
+          type="button"
+        >
           Propose shots
           <span aria-hidden="true">→</span>
         </button>
@@ -702,9 +751,16 @@ function ProposalSetup(props: {
           <h2 data-workspace-heading tabIndex={-1}>
             Propose chronological shots
           </h2>
-          <p>The project will not change until you review and accept the result.</p>
+          <p>
+            The project will not change until you review and accept the result.
+          </p>
         </div>
-        <button aria-label="Close shot proposal setup" className="icon-button" onClick={props.onCancel} type="button">
+        <button
+          aria-label="Close shot proposal setup"
+          className="icon-button"
+          onClick={props.onCancel}
+          type="button"
+        >
           ×
         </button>
       </header>
@@ -716,7 +772,12 @@ function ProposalSetup(props: {
           ['Standard', '7 sec target', '4–12 sec range'],
           ['Punchy', '4 sec target', '2–7 sec range'],
         ].map(([name, target, range]) => (
-          <label className={props.pacing === name ? 'pacing-card selected' : 'pacing-card'} key={name}>
+          <label
+            className={
+              props.pacing === name ? 'pacing-card selected' : 'pacing-card'
+            }
+            key={name}
+          >
             <input
               checked={props.pacing === name}
               name="pacing"
@@ -735,36 +796,57 @@ function ProposalSetup(props: {
         <div className="advanced-grid">
           <label>
             Minimum duration
-            <input defaultValue="4 sec" disabled title="Planned advanced constraint" />
+            <input
+              defaultValue="4 sec"
+              disabled
+              title="Planned advanced constraint"
+            />
           </label>
           <label>
             Maximum duration
-            <input defaultValue="12 sec" disabled title="Planned advanced constraint" />
+            <input
+              defaultValue="12 sec"
+              disabled
+              title="Planned advanced constraint"
+            />
           </label>
           <label>
             Maximum words
-            <input defaultValue="32" disabled title="Planned advanced constraint" />
+            <input
+              defaultValue="32"
+              disabled
+              title="Planned advanced constraint"
+            />
           </label>
           <label>
             Approximate shots
-            <input defaultValue="5" disabled title="Planned advanced constraint" />
+            <input
+              defaultValue="5"
+              disabled
+              title="Planned advanced constraint"
+            />
           </label>
         </div>
         <p className="prototype-note">
-          These controls are shown for planning; this deterministic mock uses the selected pacing
-          preset.
+          These controls are shown for planning; this deterministic mock uses
+          the selected pacing preset.
         </p>
       </details>
 
       <label className="switch-row">
         <input
           checked={props.includeVisualBriefs}
-          onChange={(event) => props.onIncludeVisualBriefs(event.target.checked)}
+          onChange={(event) =>
+            props.onIncludeVisualBriefs(event.target.checked)
+          }
           type="checkbox"
         />
         <span>
           <strong>Include visual briefs</strong>
-          <small>Off by default. Add a visual-intent suggestion to each proposed shot.</small>
+          <small>
+            Off by default. Add a visual-intent suggestion to each proposed
+            shot.
+          </small>
         </span>
       </label>
 
@@ -779,7 +861,11 @@ function ProposalSetup(props: {
         <button className="quiet-button" onClick={props.onCancel} type="button">
           Cancel
         </button>
-        <button className="primary-button" onClick={props.onSubmit} type="button">
+        <button
+          className="primary-button"
+          onClick={props.onSubmit}
+          type="button"
+        >
           Ask attached agent
         </button>
       </footer>
@@ -826,64 +912,90 @@ function ProposalReview(props: {
           <span>Transcript chunk</span>
           <span>Theme and rationale</span>
         </div>
-        {proposalRows.map(([id, originalStart, originalEnd, transcriptChunk, theme, reason], index) => {
-          const start = index === 1 ? props.firstBoundary : originalStart;
-          const end = index === 0 ? props.firstBoundary : originalEnd;
-          const visibleTranscript = index === 0 ? props.firstTranscript : transcriptChunk;
-          return (
-            <article className={index === 0 ? 'proposal-row highlighted' : 'proposal-row'} key={id}>
-              <div className="proposal-index">
-                <span>{id.padStart(2, '0')}</span>
-                <small>{index === 0 ? 'Boundary adjusted' : 'Agent proposed'}</small>
-              </div>
-              <div className="time-range">
-                <label>
-                  Start
-                  <input aria-label={`Shot ${id} start time`} readOnly value={start} />
-                </label>
-                <span>→</span>
-                <label>
-                  End
-                  <input aria-label={`Shot ${id} end time`} readOnly value={end} />
-                </label>
-                {index === 0 && (
-                  <button
-                    aria-label="Nudge first boundary later"
-                    className="nudge-button"
-                    onClick={props.onBoundary}
-                    type="button"
-                  >
-                    +0.6s
-                  </button>
-                )}
-              </div>
-              <div
-                aria-label={`Transcript chunk for Shot ${id}`}
-                className="proposal-transcript"
-                data-testid={`proposal-transcript-${id.padStart(2, '0')}`}
-                tabIndex={visibleTranscript.length > 180 ? 0 : undefined}
+        {proposalRows.map(
+          (
+            [id, originalStart, originalEnd, transcriptChunk, theme, reason],
+            index,
+          ) => {
+            const start = index === 1 ? props.firstBoundary : originalStart;
+            const end = index === 0 ? props.firstBoundary : originalEnd;
+            const visibleTranscript =
+              index === 0 ? props.firstTranscript : transcriptChunk;
+            return (
+              <article
+                className={
+                  index === 0 ? 'proposal-row highlighted' : 'proposal-row'
+                }
+                key={id}
               >
-                <p>{visibleTranscript}</p>
-              </div>
-              <div className="proposal-reason">
-                <strong>{theme}</strong>
-                <p>{reason}</p>
-                {props.includeVisualBriefs && (
-                  <small className="proposal-visual-brief">
-                    Visual brief · Seek one simple, legible metaphor for this beat.
+                <div className="proposal-index">
+                  <span>{id.padStart(2, '0')}</span>
+                  <small>
+                    {index === 0 ? 'Boundary adjusted' : 'Agent proposed'}
                   </small>
-                )}
-              </div>
-            </article>
-          );
-        })}
+                </div>
+                <div className="time-range">
+                  <label>
+                    Start
+                    <input
+                      aria-label={`Shot ${id} start time`}
+                      readOnly
+                      value={start}
+                    />
+                  </label>
+                  <span>→</span>
+                  <label>
+                    End
+                    <input
+                      aria-label={`Shot ${id} end time`}
+                      readOnly
+                      value={end}
+                    />
+                  </label>
+                  {index === 0 && (
+                    <button
+                      aria-label="Nudge first boundary later"
+                      className="nudge-button"
+                      onClick={props.onBoundary}
+                      type="button"
+                    >
+                      +0.6s
+                    </button>
+                  )}
+                </div>
+                <div
+                  aria-label={`Transcript chunk for Shot ${id}`}
+                  className="proposal-transcript"
+                  data-testid={`proposal-transcript-${id.padStart(2, '0')}`}
+                  tabIndex={visibleTranscript.length > 180 ? 0 : undefined}
+                >
+                  <p>{visibleTranscript}</p>
+                </div>
+                <div className="proposal-reason">
+                  <strong>{theme}</strong>
+                  <p>{reason}</p>
+                  {props.includeVisualBriefs && (
+                    <small className="proposal-visual-brief">
+                      Visual brief · Seek one simple, legible metaphor for this
+                      beat.
+                    </small>
+                  )}
+                </div>
+              </article>
+            );
+          },
+        )}
       </div>
 
       <footer className="review-actions">
         <button className="danger-quiet" onClick={props.onReject} type="button">
           Reject proposal
         </button>
-        <button className="quiet-button" onClick={props.onRegenerate} type="button">
+        <button
+          className="quiet-button"
+          onClick={props.onRegenerate}
+          type="button"
+        >
           Regenerate proposal
         </button>
         <div className="review-summary">
@@ -891,7 +1003,11 @@ function ProposalReview(props: {
           <span>00:42 total</span>
           <span>Checkpoint created on accept</span>
         </div>
-        <button className="primary-button large" onClick={props.onAccept} type="button">
+        <button
+          className="primary-button large"
+          onClick={props.onAccept}
+          type="button"
+        >
           Accept 5 shots
           <span aria-hidden="true">→</span>
         </button>
@@ -917,8 +1033,8 @@ function Ledger(props: {
   onSendAgent: () => void;
   taskReceipt: TaskReceipt | null;
 }) {
-  const [dockCollapsed, setDockCollapsed] = useState(() =>
-    window.matchMedia('(max-width: 760px)').matches,
+  const [dockCollapsed, setDockCollapsed] = useState(
+    () => window.matchMedia('(max-width: 760px)').matches,
   );
 
   return (
@@ -949,7 +1065,9 @@ function Ledger(props: {
       <div className="ledger-list">
         {props.shots.map((shot) => (
           <article
-            className={props.selectedShot === shot.id ? 'shot-row selected' : 'shot-row'}
+            className={
+              props.selectedShot === shot.id ? 'shot-row selected' : 'shot-row'
+            }
             data-testid={`shot-${shot.id}`}
             key={shot.id}
           >
@@ -962,7 +1080,9 @@ function Ledger(props: {
                   type="button"
                 >
                   <span>Shot {shot.id}</span>
-                  <small>{props.selectedShot === shot.id ? 'Selected' : 'Select'}</small>
+                  <small>
+                    {props.selectedShot === shot.id ? 'Selected' : 'Select'}
+                  </small>
                 </button>
                 <span>{shot.source}</span>
                 <span>{shot.duration}</span>
@@ -978,7 +1098,10 @@ function Ledger(props: {
               </header>
               <div className="mini-waveform" aria-hidden="true">
                 {Array.from({ length: 34 }, (_, index) => (
-                  <i key={index} style={{ height: `${22 + ((index * 23) % 58)}%` }} />
+                  <i
+                    key={index}
+                    style={{ height: `${22 + ((index * 23) % 58)}%` }}
+                  />
                 ))}
               </div>
               <p
@@ -991,13 +1114,25 @@ function Ledger(props: {
               </p>
               <footer>
                 <span>{shot.theme}</span>
-                <button disabled title="Planned editorial control" type="button">
+                <button
+                  disabled
+                  title="Planned editorial control"
+                  type="button"
+                >
                   Split
                 </button>
-                <button disabled title="Planned editorial control" type="button">
+                <button
+                  disabled
+                  title="Planned editorial control"
+                  type="button"
+                >
                   Trim
                 </button>
-                <button disabled title="Planned editorial control" type="button">
+                <button
+                  disabled
+                  title="Planned editorial control"
+                  type="button"
+                >
                   Move
                 </button>
               </footer>
@@ -1023,15 +1158,25 @@ function Ledger(props: {
           <span className="target-chip" data-testid="agent-target-chip">
             Shot {props.selected.id}
           </span>
-          <button disabled title="One attached session in this mock-up" type="button">
+          <button
+            disabled
+            title="One attached session in this mock-up"
+            type="button"
+          >
             Codex · attached
           </button>
-          <button disabled title="Candidate search is the modeled dock action" type="button">
+          <button
+            disabled
+            title="Candidate search is the modeled dock action"
+            type="button"
+          >
             Find candidates
           </button>
           <button
             aria-expanded={!dockCollapsed}
-            aria-label={dockCollapsed ? 'Expand agent dock' : 'Collapse agent dock'}
+            aria-label={
+              dockCollapsed ? 'Expand agent dock' : 'Collapse agent dock'
+            }
             className="dock-collapse-toggle"
             onClick={() => setDockCollapsed((current) => !current)}
             type="button"
@@ -1056,7 +1201,10 @@ function Ledger(props: {
           <button
             aria-label="Send instruction"
             className="primary-button"
-            disabled={!props.agentInstruction.trim() || props.taskReceipt?.status === 'running'}
+            disabled={
+              !props.agentInstruction.trim() ||
+              props.taskReceipt?.status === 'running'
+            }
             onClick={props.onSendAgent}
             type="button"
           >
@@ -1097,8 +1245,14 @@ function VisualCell({
       <section className="visual-cell">
         <header>
           <span>CANDIDATES · {state.count}</span>
-          <span className="selected-status">✓ Selected by you · agent cannot replace</span>
-          <button disabled title="Per-format crop editing is planned" type="button">
+          <span className="selected-status">
+            ✓ Selected by you · agent cannot replace
+          </span>
+          <button
+            disabled
+            title="Per-format crop editing is planned"
+            type="button"
+          >
             16:9 crop · 9:16 crop
           </button>
         </header>
@@ -1122,11 +1276,16 @@ function VisualCell({
                 data-candidate-asset
                 key={`alternate-${index}`}
                 onClick={() =>
-                  onSelectCandidate(shot.id, `agent-alternate-${index + 1}-shot-${shot.id}.jpg`)
+                  onSelectCandidate(
+                    shot.id,
+                    `agent-alternate-${index + 1}-shot-${shot.id}.jpg`,
+                  )
                 }
                 type="button"
               >
-                <span className={`candidate-art ${index % 2 === 0 ? 'art-three' : 'art-two'}`} />
+                <span
+                  className={`candidate-art ${index % 2 === 0 ? 'art-three' : 'art-two'}`}
+                />
                 <small>Agent {index + 1}</small>
               </button>
             ),
@@ -1145,7 +1304,11 @@ function VisualCell({
           <button onClick={() => onInspectAsset(state.selected!)} type="button">
             Inspect
           </button>
-          <button disabled title="Choose another visible candidate to replace the selection" type="button">
+          <button
+            disabled
+            title="Choose another visible candidate to replace the selection"
+            type="button"
+          >
             Replace
           </button>
           <span>Provenance verified</span>
@@ -1159,17 +1322,20 @@ function VisualCell({
       <section className="visual-cell">
         <header>
           <span>
-            {state.count} {state.count === 1 ? 'candidate' : 'candidates'} · none selected
+            {state.count} {state.count === 1 ? 'candidate' : 'candidates'} ·
+            none selected
           </span>
           <span className="recommendation-status">
-            {agentJustAttached ? 'Candidate attached · awaiting your selection' : 'Agent recommendation'}
+            {agentJustAttached
+              ? 'Candidate attached · awaiting your selection'
+              : 'Agent recommendation'}
           </span>
         </header>
         <div className="candidate-grid two">
           {Array.from({ length: state.count }, (_, index) => {
             const assetName =
               index === 0
-                ? state.uploadedFile ?? `uploaded-shot-${shot.id}.jpg`
+                ? (state.uploadedFile ?? `uploaded-shot-${shot.id}.jpg`)
                 : `agent-pick-${index + 1}-shot-${shot.id}.jpg`;
             return (
               <button
@@ -1188,7 +1354,9 @@ function VisualCell({
                   className={`candidate-art ${index % 2 === 0 ? 'art-three' : 'art-four'}`}
                 />
                 <small>
-                  {index === 0 && state.uploadedFile ? 'Uploaded by you' : `Candidate ${index + 1}`}
+                  {index === 0 && state.uploadedFile
+                    ? 'Uploaded by you'
+                    : `Candidate ${index + 1}`}
                 </small>
               </button>
             );
@@ -1242,11 +1410,18 @@ function VisualCell({
         >
           Ask agent for candidates
         </button>
-        <button disabled title="Shot notes are planned for implementation" className="text-button" type="button">
+        <button
+          disabled
+          title="Shot notes are planned for implementation"
+          className="text-button"
+          type="button"
+        >
           Add note
         </button>
       </div>
-      <p>Preview will use a clearly marked placeholder until you select a visual.</p>
+      <p>
+        Preview will use a clearly marked placeholder until you select a visual.
+      </p>
     </section>
   );
 }
@@ -1270,7 +1445,9 @@ function ActivityView({
           <p>Compact project evidence, not a duplicate of the external chat.</p>
         </div>
         <span className="view-count">
-          {receiptCount > 0 ? `${receiptCount} ${receiptCount === 1 ? 'receipt' : 'receipts'}` : 'No receipts yet'}
+          {receiptCount > 0
+            ? `${receiptCount} ${receiptCount === 1 ? 'receipt' : 'receipts'}`
+            : 'No receipts yet'}
         </span>
       </header>
       {proposalPacing && (
@@ -1283,9 +1460,14 @@ function ActivityView({
               <strong>Codex · Shot proposal</strong>
               <span className="receipt-done">Accepted by you</span>
             </header>
-            <blockquote>Propose chronological shots with {proposalPacing.toLowerCase()} pacing.</blockquote>
+            <blockquote>
+              Propose chronological shots with {proposalPacing.toLowerCase()}{' '}
+              pacing.
+            </blockquote>
             <div className="receipt-result">
-              <strong>5 staged shots accepted · project checkpoint created</strong>
+              <strong>
+                5 staged shots accepted · project checkpoint created
+              </strong>
               <span>Complete transcript coverage · no overlap</span>
             </div>
           </div>
@@ -1309,7 +1491,11 @@ function ActivityView({
           <div className="receipt-main">
             <header>
               <strong>Codex · Shot {receipt.shotId}</strong>
-              <span className={receipt.status === 'done' ? 'receipt-done' : 'receipt-running'}>
+              <span
+                className={
+                  receipt.status === 'done' ? 'receipt-done' : 'receipt-running'
+                }
+              >
                 {receipt.status === 'done' ? 'Completed' : 'Running'}
               </span>
             </header>
@@ -1341,7 +1527,10 @@ function ActivityView({
         <div className="empty-view">
           <span aria-hidden="true">◇</span>
           <h3>No agent work yet</h3>
-          <p>Send an instruction from the Shot Ledger to create the first durable receipt.</p>
+          <p>
+            Send an instruction from the Shot Ledger to create the first durable
+            receipt.
+          </p>
         </div>
       ) : null}
     </section>
@@ -1411,7 +1600,10 @@ function SettingsView({
           <h2 data-workspace-heading tabIndex={-1}>
             Settings
           </h2>
-          <p>Prototype controls mirror the approved local-first product boundaries.</p>
+          <p>
+            Prototype controls mirror the approved local-first product
+            boundaries.
+          </p>
         </div>
       </header>
       <div className="settings-grid">
@@ -1467,7 +1659,10 @@ function DialogFrame({
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const returnFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     const background = [
       document.querySelector<HTMLElement>('.topbar'),
       document.querySelector<HTMLElement>('.mobile-project-controls'),
@@ -1552,7 +1747,8 @@ function UploadCandidateDialog({
       <span className="eyebrow">SHOT {shotId} · HUMAN ASSET INTAKE</span>
       <h2>Attach a candidate</h2>
       <p className="dialog-lede">
-        This prototype simulates copying one local file into managed project media.
+        This prototype simulates copying one local file into managed project
+        media.
       </p>
       <div className="demo-file">
         <span className="file-art" aria-hidden="true" />
@@ -1626,12 +1822,20 @@ function PreviewDialog({
 }) {
   const isLandscape = format === 'landscape';
   return (
-    <DialogFrame closeLabel="Close preview" dialogLabel="Assembled preview" onClose={onClose}>
+    <DialogFrame
+      closeLabel="Close preview"
+      dialogLabel="Assembled preview"
+      onClose={onClose}
+    >
       <header className="preview-header">
         <div>
           <span className="eyebrow">ON-DEMAND PLAYER</span>
           <h2>Assembled preview</h2>
-          <p>{isLandscape ? 'Landscape · Captions off' : 'Vertical · Captions on'}</p>
+          <p>
+            {isLandscape
+              ? 'Landscape · Captions off'
+              : 'Vertical · Captions on'}
+          </p>
         </div>
         <div className="format-switch">
           <button
@@ -1652,7 +1856,11 @@ function PreviewDialog({
           </button>
         </div>
       </header>
-      <div className={isLandscape ? 'preview-frame landscape' : 'preview-frame vertical'}>
+      <div
+        className={
+          isLandscape ? 'preview-frame landscape' : 'preview-frame vertical'
+        }
+      >
         <div className={`preview-art ${fit[format]}`}>
           <span>Subscription fatigue</span>
           {!isLandscape && <strong>every app thinks it’s the exception</strong>}
@@ -1700,7 +1908,9 @@ function formatShotList(ids: string[]) {
 }
 
 function numberWord(value: number) {
-  return ['zero', 'one', 'two', 'three', 'four', 'five'][value] ?? String(value);
+  return (
+    ['zero', 'one', 'two', 'three', 'four', 'five'][value] ?? String(value)
+  );
 }
 
 function ExportDialog({
@@ -1741,21 +1951,25 @@ function ExportDialog({
           <h2>Export preflight</h2>
           <div className="preflight-summary">
             <strong>{missingCount} shots need visuals</strong>
-            <p>
-              {missingList} will use unmistakable placeholder frames.
-            </p>
+            <p>{missingList} will use unmistakable placeholder frames.</p>
           </div>
           <ul className="preflight-list">
             <li className="pass">Source audio readable · 00:42</li>
             <li className="pass">Five valid shot ranges · no overlap</li>
             <li className="pass">16:9 and 9:16 framing configured</li>
-            <li className="warning">Missing visuals require your confirmation</li>
+            <li className="warning">
+              Missing visuals require your confirmation
+            </li>
           </ul>
           <footer className="dialog-actions">
             <button className="quiet-button" onClick={onClose} type="button">
               Return to edit
             </button>
-            <button className="primary-button" onClick={onConfirm} type="button">
+            <button
+              className="primary-button"
+              onClick={onConfirm}
+              type="button"
+            >
               Export anyway
             </button>
           </footer>
@@ -1766,7 +1980,8 @@ function ExportDialog({
           <span className="eyebrow">HUMAN AUTHORITY GATE</span>
           <h2>Confirm placeholder export</h2>
           <p className="dialog-lede">
-            This action is intentionally explicit. An agent cannot approve incomplete final output.
+            This action is intentionally explicit. An agent cannot approve
+            incomplete final output.
           </p>
           <label className="confirmation-check">
             <input
@@ -1777,7 +1992,8 @@ function ExportDialog({
             <span>
               <strong>Include clearly marked placeholder frames</strong>
               <small>
-                I understand that {missingWord} {missingCount === 1 ? 'shot is' : 'shots are'} visually
+                I understand that {missingWord}{' '}
+                {missingCount === 1 ? 'shot is' : 'shots are'} visually
                 incomplete.
               </small>
             </span>
@@ -1802,7 +2018,9 @@ function ExportDialog({
           <span aria-hidden="true">✓</span>
           <span className="eyebrow">SIMULATED RENDER COMPLETE</span>
           <h2>Two mock renders are ready</h2>
-          <p>No media was rendered; this validates the final product interaction.</p>
+          <p>
+            No media was rendered; this validates the final product interaction.
+          </p>
           <div>
             <article>
               <strong>subscription-fatigue-16x9.mp4</strong>

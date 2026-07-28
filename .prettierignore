@@ -1,0 +1,11 @@
+.rant-studio/
+.superpowers/
+.vite/
+coverage/
+dist/
+docs/goals/
+docs/superpowers/
+node_modules/
+package-lock.json
+playwright-report/
+test-results/

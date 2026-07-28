@@ -12,7 +12,10 @@ async function acceptedLedgerFixture() {
   const root = await mkdtemp(join(tmpdir(), 'rant-studio-ledger-'));
   const databasePath = join(root, 'project.db');
   const store = openProjectStore(databasePath);
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: ['project:read', 'task:claim', 'proposal:write'],
@@ -83,7 +86,9 @@ async function acceptedLedgerFixture() {
       },
     ],
   });
-  await human.acceptShotProposal(created.id, proposal.id, { expectedRevision: 3 });
+  await human.acceptShotProposal(created.id, proposal.id, {
+    expectedRevision: 3,
+  });
   return {
     agent,
     databasePath,
@@ -109,7 +114,10 @@ test('ledger reorder preserves logical IDs while split and merge create attribut
       (error: unknown) =>
         error instanceof RantApiError && error.code === 'FORBIDDEN',
     );
-    assert.equal((await fixture.human.getLedger(fixture.projectId)).revision, 4);
+    assert.equal(
+      (await fixture.human.getLedger(fixture.projectId)).revision,
+      4,
+    );
 
     const reordered = await fixture.human.editLedger(fixture.projectId, {
       expectedRevision: 4,
@@ -132,8 +140,9 @@ test('ledger reorder preserves logical IDs while split and merge create attribut
     assert.equal(splitChildren.length, 2);
     assert.ok(splitChildren.every((shot) => !initialIds.includes(shot.id)));
     assert.ok(
-      split.ancestry.filter((edge) => edge.parentShotId === reordered.shots[0]!.id)
-        .length === 2,
+      split.ancestry.filter(
+        (edge) => edge.parentShotId === reordered.shots[0]!.id,
+      ).length === 2,
     );
 
     const merged = await fixture.human.editLedger(fixture.projectId, {
@@ -164,10 +173,13 @@ test('ledger reorder preserves logical IDs while split and merge create attribut
 test('named checkpoint restore and undo survive restart without reusing stale revisions', async () => {
   const fixture = await acceptedLedgerFixture();
   const initial = await fixture.human.getLedger(fixture.projectId);
-  const checkpoint = await fixture.human.createLedgerCheckpoint(fixture.projectId, {
-    expectedRevision: initial.revision,
-    name: 'Before cut',
-  });
+  const checkpoint = await fixture.human.createLedgerCheckpoint(
+    fixture.projectId,
+    {
+      expectedRevision: initial.revision,
+      name: 'Before cut',
+    },
+  );
   const cut = await fixture.human.editLedger(fixture.projectId, {
     expectedRevision: initial.revision,
     operation: { kind: 'cut', shotId: initial.shots[0]!.id },

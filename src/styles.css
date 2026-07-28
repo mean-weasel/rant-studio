@@ -1,7 +1,13 @@
 :root {
   color: #f4f0e8;
   background: #101312;
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --bg: #101312;
@@ -32,7 +38,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 10% -10%, rgba(240, 154, 89, 0.08), transparent 32rem),
+    radial-gradient(
+      circle at 10% -10%,
+      rgba(240, 154, 89, 0.08),
+      transparent 32rem
+    ),
     var(--bg);
 }
 
@@ -89,7 +99,10 @@ button:disabled {
   z-index: 10;
   top: 0;
   display: grid;
-  grid-template-columns: minmax(230px, 0.8fr) minmax(320px, 1fr) minmax(400px, 1fr);
+  grid-template-columns: minmax(230px, 0.8fr) minmax(320px, 1fr) minmax(
+      400px,
+      1fr
+    );
   align-items: center;
   min-height: 76px;
   padding: 0 28px;
@@ -701,8 +714,7 @@ main {
   padding: 28px;
   border: 1px solid var(--line-bright);
   background:
-    linear-gradient(145deg, rgba(240, 154, 89, 0.035), transparent 45%),
-    #171b19;
+    linear-gradient(145deg, rgba(240, 154, 89, 0.035), transparent 45%), #171b19;
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.6);
   overflow: auto;
 }
@@ -871,7 +883,12 @@ main {
   padding: 28px;
   background:
     linear-gradient(0deg, rgba(12, 15, 14, 0.88), transparent 58%),
-    repeating-linear-gradient(34deg, #b66e47 0 38px, #e0b171 38px 76px, #485a64 76px 114px);
+    repeating-linear-gradient(
+      34deg,
+      #b66e47 0 38px,
+      #e0b171 38px 76px,
+      #485a64 76px 114px
+    );
 }
 
 .preview-art.contain {
@@ -1698,7 +1715,12 @@ main {
 .art-one {
   background:
     linear-gradient(90deg, rgba(16, 19, 18, 0.12), rgba(16, 19, 18, 0.72)),
-    repeating-linear-gradient(35deg, #a76b48 0 14px, #e2b371 14px 28px, #5a6871 28px 42px);
+    repeating-linear-gradient(
+      35deg,
+      #a76b48 0 14px,
+      #e2b371 14px 28px,
+      #5a6871 28px 42px
+    );
 }
 
 .art-two {
@@ -1708,13 +1730,17 @@ main {
 }
 
 .art-three {
-  background: linear-gradient(125deg, #38525c 0 35%, #c17d55 35% 55%, #292e35 55%);
+  background: linear-gradient(
+    125deg,
+    #38525c 0 35%,
+    #c17d55 35% 55%,
+    #292e35 55%
+  );
 }
 
 .art-four {
   background:
-    repeating-linear-gradient(90deg, #303944 0 12px, #744750 12px 24px),
-    #28333a;
+    repeating-linear-gradient(90deg, #303944 0 12px, #744750 12px 24px), #28333a;
 }
 
 .candidate strong,
@@ -2788,14 +2814,13 @@ main {
 
 .shot-preview[data-missing='true'] {
   color: white;
-  background:
-    repeating-linear-gradient(
-      135deg,
-      #332b3f,
-      #332b3f 18px,
-      #453a55 18px,
-      #453a55 36px
-    );
+  background: repeating-linear-gradient(
+    135deg,
+    #332b3f,
+    #332b3f 18px,
+    #453a55 18px,
+    #453a55 36px
+  );
 }
 
 .shot-preview p {

@@ -27,7 +27,10 @@ async function assetFixture() {
   const store = openProjectStore(databasePath, {
     managedRoot,
   });
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: [
@@ -39,8 +42,14 @@ async function assetFixture() {
     ],
   });
   const service = await startLocalService({ port: 0, store });
-  const human = new RantClient({ baseUrl: service.url, credential: humanCredential.token });
-  const agent = new RantClient({ baseUrl: service.url, credential: agentCredential.token });
+  const human = new RantClient({
+    baseUrl: service.url,
+    credential: humanCredential.token,
+  });
+  const agent = new RantClient({
+    baseUrl: service.url,
+    credential: agentCredential.token,
+  });
   const project = await human.createProject('Assets');
   await human.uploadNarration(project.id, {
     bytesBase64: wav.toString('base64'),
@@ -88,7 +97,9 @@ async function assetFixture() {
       },
     ],
   });
-  await human.acceptShotProposal(project.id, proposal.id, { expectedRevision: 3 });
+  await human.acceptShotProposal(project.id, proposal.id, {
+    expectedRevision: 3,
+  });
   return {
     agent,
     agentToken: agentCredential.token,
@@ -107,13 +118,16 @@ test('agent candidate attachment is multi-shot and provenance safe but human sel
   const fixture = await assetFixture();
   try {
     const ledger = await fixture.human.getLedger(fixture.projectId);
-    const attached = await fixture.agent.uploadVisualCandidate(fixture.projectId, {
-      bytesBase64: png.toString('base64'),
-      expectedRevision: ledger.revision,
-      mimeType: 'image/png',
-      originalName: 'receipt.png',
-      shotIds: ledger.shots.map((shot) => shot.id),
-    });
+    const attached = await fixture.agent.uploadVisualCandidate(
+      fixture.projectId,
+      {
+        bytesBase64: png.toString('base64'),
+        expectedRevision: ledger.revision,
+        mimeType: 'image/png',
+        originalName: 'receipt.png',
+        shotIds: ledger.shots.map((shot) => shot.id),
+      },
+    );
     assert.equal(attached.revision, 5);
     assert.equal(attached.assets.length, 1);
     assert.equal(attached.assets[0]?.provenance.actorKind, 'agent');
@@ -130,13 +144,16 @@ test('agent candidate attachment is multi-shot and provenance safe but human sel
     });
     assert.equal(selected.shots[0]?.selectedAssetId, attached.assets[0]!.id);
 
-    const duplicate = await fixture.agent.uploadVisualCandidate(fixture.projectId, {
-      bytesBase64: png.toString('base64'),
-      expectedRevision: selected.revision,
-      mimeType: 'image/png',
-      originalName: 'same-bytes.png',
-      shotIds: ledger.shots.map((shot) => shot.id),
-    });
+    const duplicate = await fixture.agent.uploadVisualCandidate(
+      fixture.projectId,
+      {
+        bytesBase64: png.toString('base64'),
+        expectedRevision: selected.revision,
+        mimeType: 'image/png',
+        originalName: 'same-bytes.png',
+        shotIds: ledger.shots.map((shot) => shot.id),
+      },
+    );
     assert.equal(duplicate.assets.length, 1);
     assert.deepEqual(
       duplicate.shots.map((shot) => shot.candidates.length),
@@ -287,26 +304,37 @@ test('durable asset tasks cover claim, waiting, success, failure, cancellation, 
       idempotencyKey: 'running-2',
       status: 'running',
     });
-    const attached = await fixture.agent.uploadVisualCandidate(fixture.projectId, {
-      bytesBase64: png.toString('base64'),
-      expectedRevision: ledger.revision,
-      mimeType: 'image/png',
-      originalName: 'shared.png',
-      shotIds: ledger.shots.map((shot) => shot.id),
-      taskId: task.id,
-    });
-    const completed = await fixture.agent.transitionTask(fixture.projectId, task.id, {
-      expectedProjectRevision: attached.revision,
-      idempotencyKey: 'terminal-success',
-      status: 'succeeded',
-      summary: 'Attached one checksum-verified candidate to both shots.',
-    });
-    const repeated = await fixture.agent.transitionTask(fixture.projectId, task.id, {
-      expectedProjectRevision: attached.revision,
-      idempotencyKey: 'terminal-success',
-      status: 'succeeded',
-      summary: 'Attached one checksum-verified candidate to both shots.',
-    });
+    const attached = await fixture.agent.uploadVisualCandidate(
+      fixture.projectId,
+      {
+        bytesBase64: png.toString('base64'),
+        expectedRevision: ledger.revision,
+        mimeType: 'image/png',
+        originalName: 'shared.png',
+        shotIds: ledger.shots.map((shot) => shot.id),
+        taskId: task.id,
+      },
+    );
+    const completed = await fixture.agent.transitionTask(
+      fixture.projectId,
+      task.id,
+      {
+        expectedProjectRevision: attached.revision,
+        idempotencyKey: 'terminal-success',
+        status: 'succeeded',
+        summary: 'Attached one checksum-verified candidate to both shots.',
+      },
+    );
+    const repeated = await fixture.agent.transitionTask(
+      fixture.projectId,
+      task.id,
+      {
+        expectedProjectRevision: attached.revision,
+        idempotencyKey: 'terminal-success',
+        status: 'succeeded',
+        summary: 'Attached one checksum-verified candidate to both shots.',
+      },
+    );
     assert.equal(repeated.receipt?.id, completed.receipt?.id);
 
     const failedTask = await fixture.human.createAssetTask(fixture.projectId, {
@@ -341,11 +369,14 @@ test('durable asset tasks cover claim, waiting, success, failure, cancellation, 
       'claimed',
     );
 
-    const canceledTask = await fixture.human.createAssetTask(fixture.projectId, {
-      expectedRevision: attached.revision,
-      instruction: 'This request is no longer needed.',
-      shotIds: [ledger.shots[1]!.id],
-    });
+    const canceledTask = await fixture.human.createAssetTask(
+      fixture.projectId,
+      {
+        expectedRevision: attached.revision,
+        instruction: 'This request is no longer needed.',
+        shotIds: [ledger.shots[1]!.id],
+      },
+    );
     await fixture.human.transitionTask(fixture.projectId, canceledTask.id, {
       expectedProjectRevision: attached.revision,
       idempotencyKey: 'terminal-canceled',
@@ -393,24 +424,29 @@ test('durable asset tasks cover claim, waiting, success, failure, cancellation, 
       1,
     );
 
-    const expiringTask = await fixture.human.createAssetTask(fixture.projectId, {
-      expectedRevision: selected.revision,
-      instruction: 'This claim should become reclaimable.',
-      shotIds: [ledger.shots[1]!.id],
-    });
+    const expiringTask = await fixture.human.createAssetTask(
+      fixture.projectId,
+      {
+        expectedRevision: selected.revision,
+        instruction: 'This claim should become reclaimable.',
+        shotIds: [ledger.shots[1]!.id],
+      },
+    );
     await fixture.agent.claimTask(fixture.projectId, expiringTask.id, {
       leaseMs: 0,
       sessionId: session.id,
     });
     const afterExpiry = await fixture.human.getActivity(fixture.projectId);
     assert.equal(
-      afterExpiry.tasks.find((candidate) => candidate.id === expiringTask.id)?.status,
+      afterExpiry.tasks.find((candidate) => candidate.id === expiringTask.id)
+        ?.status,
       'queued',
     );
     assert.equal(
       afterExpiry.receipts.some(
         (receipt) =>
-          receipt.taskId === expiringTask.id && receipt.result === 'interrupted',
+          receipt.taskId === expiringTask.id &&
+          receipt.result === 'interrupted',
       ),
       true,
     );
@@ -431,13 +467,16 @@ test('durable asset tasks cover claim, waiting, success, failure, cancellation, 
 test('asset state, task receipts, and one revision truth survive a real store and service restart', async () => {
   const fixture = await assetFixture();
   const ledger = await fixture.human.getLedger(fixture.projectId);
-  const attached = await fixture.agent.uploadVisualCandidate(fixture.projectId, {
-    bytesBase64: png.toString('base64'),
-    expectedRevision: ledger.revision,
-    mimeType: 'image/png',
-    originalName: 'restart.png',
-    shotIds: ledger.shots.map((shot) => shot.id),
-  });
+  const attached = await fixture.agent.uploadVisualCandidate(
+    fixture.projectId,
+    {
+      bytesBase64: png.toString('base64'),
+      expectedRevision: ledger.revision,
+      mimeType: 'image/png',
+      originalName: 'restart.png',
+      shotIds: ledger.shots.map((shot) => shot.id),
+    },
+  );
   const selected = await fixture.human.selectVisual(fixture.projectId, {
     assetId: attached.assets[0]!.id,
     expectedRevision: attached.revision,
@@ -485,15 +524,22 @@ test('asset state, task receipts, and one revision truth survive a real store an
     status: 'failed',
     summary: 'Retry after restart.',
   });
-  const retry = await fixture.human.retryTask(fixture.projectId, failedTask.id, {
-    expectedProjectRevision: recommended.revision,
-  });
+  const retry = await fixture.human.retryTask(
+    fixture.projectId,
+    failedTask.id,
+    {
+      expectedProjectRevision: recommended.revision,
+    },
+  );
 
-  const interruptedTask = await fixture.human.createAssetTask(fixture.projectId, {
-    expectedRevision: recommended.revision,
-    instruction: 'Reclaim this expired running task after restart.',
-    shotIds: [ledger.shots[1]!.id],
-  });
+  const interruptedTask = await fixture.human.createAssetTask(
+    fixture.projectId,
+    {
+      expectedRevision: recommended.revision,
+      instruction: 'Reclaim this expired running task after restart.',
+      shotIds: [ledger.shots[1]!.id],
+    },
+  );
   await fixture.agent.claimTask(fixture.projectId, interruptedTask.id, {
     leaseMs: 0,
     sessionId: session.id,
@@ -510,7 +556,10 @@ test('asset state, task receipts, and one revision truth survive a real store an
   const reopenedStore = openProjectStore(fixture.databasePath, {
     managedRoot: fixture.managedRoot,
   });
-  const reopenedService = await startLocalService({ port: 0, store: reopenedStore });
+  const reopenedService = await startLocalService({
+    port: 0,
+    store: reopenedStore,
+  });
   const browserClient = new RantClient({
     baseUrl: reopenedService.url,
     credential: fixture.humanToken,
@@ -522,7 +571,10 @@ test('asset state, task receipts, and one revision truth survive a real store an
   try {
     const afterRestart = await browserClient.getAssets(fixture.projectId);
     assert.equal(afterRestart.revision, recommended.revision);
-    assert.equal(afterRestart.assets[0]?.checksum, attached.assets[0]?.checksum);
+    assert.equal(
+      afterRestart.assets[0]?.checksum,
+      attached.assets[0]?.checksum,
+    );
     assert.equal(afterRestart.assets[0]?.provenance.actorKind, 'agent');
     assert.deepEqual(
       afterRestart.shots.map((shot) => shot.candidates),

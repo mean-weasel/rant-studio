@@ -22,21 +22,26 @@ async function runCli(
 ): Promise<Record<string, any>> {
   const result = await new Promise<{ stderr: string; stdout: string }>(
     (resolve, reject) => {
-      execFile('npm', ['run', '--silent', 'rant', '--', ...args], {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          RANT_STUDIO_CREDENTIAL: credential,
-          RANT_STUDIO_URL: serviceUrl,
+      execFile(
+        'npm',
+        ['run', '--silent', 'rant', '--', ...args],
+        {
+          cwd: process.cwd(),
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            RANT_STUDIO_CREDENTIAL: credential,
+            RANT_STUDIO_URL: serviceUrl,
+          },
         },
-      }, (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || stdout || error.message));
-          return;
-        }
-        resolve({ stderr, stdout });
-      });
+        (error, stdout, stderr) => {
+          if (error) {
+            reject(new Error(stderr || stdout || error.message));
+            return;
+          }
+          resolve({ stderr, stdout });
+        },
+      );
     },
   );
   expect(result.stderr).not.toContain('MALFORMED_INPUT');
@@ -54,23 +59,50 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
   const humanImagePath = join(root, 'human.png');
   const agentImagePath = join(root, 'agent.png');
   command('ffmpeg', [
-    '-hide_banner', '-loglevel', 'error', '-y',
-    '-f', 'lavfi', '-i', 'sine=frequency=520:duration=0.8:sample_rate=48000',
-    '-c:a', 'pcm_s16le', narrationPath,
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=520:duration=0.8:sample_rate=48000',
+    '-c:a',
+    'pcm_s16le',
+    narrationPath,
   ]);
   command('ffmpeg', [
-    '-hide_banner', '-loglevel', 'error', '-y',
-    '-f', 'lavfi', '-i', 'color=c=orange:s=320x240',
-    '-frames:v', '1', humanImagePath,
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=orange:s=320x240',
+    '-frames:v',
+    '1',
+    humanImagePath,
   ]);
   command('ffmpeg', [
-    '-hide_banner', '-loglevel', 'error', '-y',
-    '-f', 'lavfi', '-i', 'color=c=teal:s=320x240',
-    '-frames:v', '1', agentImagePath,
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=teal:s=320x240',
+    '-frames:v',
+    '1',
+    agentImagePath,
   ]);
 
   let store = openProjectStore(databasePath, { managedRoot });
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: [
@@ -96,85 +128,133 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
 
     await page.getByLabel('Narration WAV').setInputFiles(narrationPath);
     await page.getByRole('button', { name: 'Upload narration' }).click();
-    await page.getByRole('button', { name: 'Transcribe deterministically' }).click();
-    await page.getByRole('button', { name: 'Open editorial workspace' }).click();
+    await page
+      .getByRole('button', { name: 'Transcribe deterministically' })
+      .click();
+    await page
+      .getByRole('button', { name: 'Open editorial workspace' })
+      .click();
     await page.getByLabel('Word', { exact: true }).selectOption({ index: 0 });
     await page.getByLabel('Replacement').fill('Corrected');
     await page.getByRole('button', { name: 'Save correction' }).click();
     await expect(page.getByText('Corrected Studio')).toBeVisible();
 
     await page.getByLabel('Starting shots').fill('2');
-    await page.getByRole('button', { name: 'Queue external shot proposal' }).click();
-    const proposalActivity = await runCli(
-      service.url,
-      agentCredential.token,
-      ['project', 'activity', projectId],
-    );
+    await page
+      .getByRole('button', { name: 'Queue external shot proposal' })
+      .click();
+    const proposalActivity = await runCli(service.url, agentCredential.token, [
+      'project',
+      'activity',
+      projectId,
+    ]);
     const proposalTask = proposalActivity.tasks.find(
       (task: { kind: string; status: string }) =>
         task.kind === 'proposal' && task.status === 'queued',
     );
-    const session = await runCli(
-      service.url,
-      agentCredential.token,
-      ['agent', 'attach', projectId],
-    );
-    await runCli(service.url, agentCredential.token, [
-      'task', 'claim', projectId, proposalTask.id, '--session', session.id,
+    const session = await runCli(service.url, agentCredential.token, [
+      'agent',
+      'attach',
+      projectId,
     ]);
     await runCli(service.url, agentCredential.token, [
-      'proposal', 'submit-chronological', projectId, proposalTask.id, '--shots', '2',
+      'task',
+      'claim',
+      projectId,
+      proposalTask.id,
+      '--session',
+      session.id,
     ]);
-    await expect(page.getByText('Agent result · ready for review')).toBeVisible();
+    await runCli(service.url, agentCredential.token, [
+      'proposal',
+      'submit-chronological',
+      projectId,
+      proposalTask.id,
+      '--shots',
+      '2',
+    ]);
+    await expect(
+      page.getByText('Agent result · ready for review'),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Accept shots' }).click();
 
-    await page.getByRole('button', { name: 'Open production Shot Ledger' }).click();
+    await page
+      .getByRole('button', { name: 'Open production Shot Ledger' })
+      .click();
     await page.getByLabel('Checkpoint name').fill('Oracle checkpoint');
     await page.getByRole('button', { name: 'Name checkpoint' }).click();
     await page.getByRole('button', { name: 'Move up' }).nth(1).click();
     await page.getByRole('button', { name: 'Undo last ledger edit' }).click();
     await page.getByRole('button', { name: 'Cut' }).first().click();
-    await page.getByRole('button', { name: 'Restore Oracle checkpoint' }).click();
+    await page
+      .getByRole('button', { name: 'Restore Oracle checkpoint' })
+      .click();
     await expect(page.locator('.production-ledger-rows > li')).toHaveCount(2);
 
     await page.getByRole('button', { name: 'Open visual workspace' }).click();
-    await page.getByLabel('Visual candidate (PNG or MP4)').setInputFiles(humanImagePath);
-    await page.getByRole('button', { name: 'Upload to selected shots' }).click();
+    await page
+      .getByLabel('Visual candidate (PNG or MP4)')
+      .setInputFiles(humanImagePath);
+    await page
+      .getByRole('button', { name: 'Upload to selected shots' })
+      .click();
     await page.getByRole('button', { name: 'Use this visual' }).first().click();
     await page.getByRole('button', { name: 'Ask agent' }).nth(1).click();
-    await page.getByRole('button', { name: 'Dispatch task to CLI agent' }).click();
-    await expect(page.getByRole('status').filter({ hasText: /Agent task .* queued/ })).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Dispatch task to CLI agent' })
+      .click();
+    await expect(
+      page.getByRole('status').filter({ hasText: /Agent task .* queued/ }),
+    ).toBeVisible();
 
-    const assetActivity = await runCli(
-      service.url,
-      agentCredential.token,
-      ['project', 'activity', projectId],
-    );
+    const assetActivity = await runCli(service.url, agentCredential.token, [
+      'project',
+      'activity',
+      projectId,
+    ]);
     const assetTask = assetActivity.tasks.find(
       (task: { kind: string; status: string }) =>
         task.kind === 'asset' && task.status === 'queued',
     );
     await runCli(service.url, agentCredential.token, [
-      'task', 'claim', projectId, assetTask.id, '--session', session.id,
+      'task',
+      'claim',
+      projectId,
+      assetTask.id,
+      '--session',
+      session.id,
     ]);
-    const sharedAssets = await runCli(
-      service.url,
-      agentCredential.token,
-      ['project', 'assets', projectId],
-    );
+    const sharedAssets = await runCli(service.url, agentCredential.token, [
+      'project',
+      'assets',
+      projectId,
+    ]);
     const withAgentAsset = await runCli(service.url, agentCredential.token, [
-      'asset', 'attach', projectId,
-      '--revision', String(sharedAssets.revision),
-      '--shots', assetTask.shotIds.join(','),
-      '--file', agentImagePath,
-      '--task', assetTask.id,
+      'asset',
+      'attach',
+      projectId,
+      '--revision',
+      String(sharedAssets.revision),
+      '--shots',
+      assetTask.shotIds.join(','),
+      '--file',
+      agentImagePath,
+      '--task',
+      assetTask.id,
     ]);
     await runCli(service.url, agentCredential.token, [
-      'task', 'transition', projectId, assetTask.id,
-      '--revision', String(withAgentAsset.revision),
-      '--status', 'succeeded',
-      '--idempotency', 'oracle-agent-asset',
-      '--summary', 'External CLI attached the second visual.',
+      'task',
+      'transition',
+      projectId,
+      assetTask.id,
+      '--revision',
+      String(withAgentAsset.revision),
+      '--status',
+      'succeeded',
+      '--idempotency',
+      'oracle-agent-asset',
+      '--summary',
+      'External CLI attached the second visual.',
     ]);
     await expect(page.getByText('1 candidate', { exact: true })).toHaveCount(2);
     await page
@@ -182,19 +262,28 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
       .nth(1)
       .getByRole('button', { name: 'Use this visual' })
       .click();
-    await expect(page.getByRole('button', { name: 'Selected', exact: true })).toHaveCount(2);
+    await expect(
+      page.getByRole('button', { name: 'Selected', exact: true }),
+    ).toHaveCount(2);
 
     await page.getByRole('button', { name: 'Open preview and export' }).click();
     await page.getByRole('button', { name: 'Play selected shot' }).click();
-    await expect(page.locator('.playable-preview video')).toHaveAttribute('src', /^blob:/);
+    await expect(page.locator('.playable-preview video')).toHaveAttribute(
+      'src',
+      /^blob:/,
+    );
     await expect(page.getByText(/Individual shot · revision/)).toBeVisible();
     await page.getByRole('button', { name: 'Play assembled edit' }).click();
     await expect(page.getByText(/Assembled edit · revision/)).toBeVisible();
     await page.getByRole('button', { name: 'Render selected formats' }).click();
-    await expect(page.getByText(/Render succeeded with 2 artifacts/)).toBeVisible({
+    await expect(
+      page.getByText(/Render succeeded with 2 artifacts/),
+    ).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText('External CLI attached the second visual.')).toBeVisible();
+    await expect(
+      page.getByText('External CLI attached the second visual.'),
+    ).toBeVisible();
     await page.getByText(/History ·/).click();
     await expect(page.locator('.ledger-history li')).not.toHaveCount(0);
 
@@ -208,17 +297,24 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
     const evidence = successful.artifacts.map((artifact) => {
       const probe = JSON.parse(
         command('ffprobe', [
-          '-v', 'error',
-          '-show_entries', 'format=duration:stream=codec_type,width,height',
-          '-of', 'json',
+          '-v',
+          'error',
+          '-show_entries',
+          'format=duration:stream=codec_type,width,height',
+          '-of',
+          'json',
           artifact.publishedPath,
         ]),
       ) as {
         format: { duration: string };
         streams: Array<{ codec_type: string; height?: number; width?: number }>;
       };
-      expect(probe.streams.some((stream) => stream.codec_type === 'audio')).toBe(true);
-      const video = probe.streams.find((stream) => stream.codec_type === 'video')!;
+      expect(
+        probe.streams.some((stream) => stream.codec_type === 'audio'),
+      ).toBe(true);
+      const video = probe.streams.find(
+        (stream) => stream.codec_type === 'video',
+      )!;
       expect([video.width, video.height]).toEqual(
         artifact.format === 'landscape' ? [1920, 1080] : [1080, 1920],
       );
@@ -239,14 +335,24 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
     await page.getByRole('button', { name: 'Connect' }).click();
     await page.getByLabel('Existing project ID').fill(projectId);
     await page.getByRole('button', { name: 'Open existing project' }).click();
-    await expect(page.getByText('Project reopened. Revision', { exact: false })).toBeVisible();
-    await page.getByRole('button', { name: 'Open editorial workspace' }).click();
+    await expect(
+      page.getByText('Project reopened. Revision', { exact: false }),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Open editorial workspace' })
+      .click();
     await expect(page.getByText('2 stable shots')).toBeVisible();
     expect(
-      (await runCli(service.url, agentCredential.token, ['project', 'media', projectId])).jobs
-        .some((job: { artifacts: unknown[]; status: string }) =>
+      (
+        await runCli(service.url, agentCredential.token, [
+          'project',
+          'media',
+          projectId,
+        ])
+      ).jobs.some(
+        (job: { artifacts: unknown[]; status: string }) =>
           job.status === 'succeeded' && job.artifacts.length === 2,
-        ),
+      ),
     ).toBe(true);
 
     process.stdout.write(

@@ -13,6 +13,14 @@
     "rant": "tsx apps/cli/src/main.ts",
     "build": "tsc -b && vite build",
     "check": "tsc -b --pretty false && tsc -p tsconfig.foundation.json --pretty false",
+    "lint": "eslint . --cache --cache-location .eslintcache",
+    "lint:fix": "eslint . --fix --cache --cache-location .eslintcache",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "knip": "knip",
+    "knip:production": "knip --production",
+    "check:max-lines": "node scripts/check-max-lines.mjs",
+    "quality": "npm run lint && npm run format:check && npm run check:max-lines && npm run check && npm run knip:production",
     "test:e2e": "playwright test",
     "test:model": "tsx --test tests/model/**/*.test.ts",
     "test:intake": "tsx --test tests/intake/**/*.test.ts",
@@ -24,7 +32,9 @@
     "test:media": "tsx --test tests/media/**/*.test.ts",
     "test:artifacts": "tsx --test --test-name-pattern=artifacts tests/media/**/*.test.ts",
     "test:oracle": "tsx --test tests/release/**/*.test.ts && playwright test tests/release/oracle.spec.ts",
-    "test:release": "npm run check && npm run build && npm run test:model && npm run test:intake && npm run test:assets && npm run test:service && npm run test:cli && npm run test:media && npm run test:oracle && npm run test:e2e && npm run test:performance && npm run test:a11y"
+    "test:node": "npm run test:model && npm run test:intake && npm run test:assets && npm run test:service && npm run test:cli && npm run test:media && tsx --test tests/release/**/*.test.ts",
+    "test:browser": "playwright test",
+    "test:release": "npm run quality && npm run build && npm run test:node && npm run test:browser"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.1",
@@ -32,14 +42,22 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.54.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^4.7.0",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "knip": "^6.29.0",
+    "prettier": "^3.9.6",
     "tsx": "^4.20.0",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.65.0",
     "vite": "^7.0.6"
   }
 }

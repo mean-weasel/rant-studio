@@ -1,11 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import {
-  mkdtemp,
-  readFile,
-  unlink,
-} from 'node:fs/promises';
+import { mkdtemp, readFile, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -47,11 +43,7 @@ function pixel(path: string, seconds: number, x: number, y: number): number[] {
   return [...result.stdout.subarray(0, 3)];
 }
 
-function meanVolume(
-  path: string,
-  seconds: number,
-  frequency: number,
-): number {
+function meanVolume(path: string, seconds: number, frequency: number): number {
   const result = spawnSync(
     'ffmpeg',
     [
@@ -206,7 +198,9 @@ async function mediaFixture() {
       },
     ],
   });
-  await human.acceptShotProposal(project.id, proposal.id, { expectedRevision: 3 });
+  await human.acceptShotProposal(project.id, proposal.id, {
+    expectedRevision: 3,
+  });
   const ledger = await human.getLedger(project.id);
   const image = await human.uploadVisualCandidate(project.id, {
     bytesBase64: (await readFile(imagePath)).toString('base64'),
@@ -294,10 +288,7 @@ test('media preflight enforces human placeholder and stale revision authority', 
         format: 'landscape',
       },
     );
-    assert.equal(
-      changed.shots[0]?.overrides.landscape.fit,
-      'contain',
-    );
+    assert.equal(changed.shots[0]?.overrides.landscape.fit, 'contain');
     assert.equal(changed.shots[0]?.overrides.vertical.fit, 'contain');
     await assert.rejects(
       fixture.human.createRenderJob(fixture.projectId, {
@@ -371,7 +362,12 @@ test('shot and assembly previews render immutable final-timeline semantics', asy
     assert.equal(shotPreview.shotId, media.shots[1]!.id);
     assert.equal(shotPreview.durationMs, 1000);
     const shotBytes = Buffer.from(
-      await (await fixture.human.getPreviewArtifact(fixture.projectId, shotPreview.id)).arrayBuffer(),
+      await (
+        await fixture.human.getPreviewArtifact(
+          fixture.projectId,
+          shotPreview.id,
+        )
+      ).arrayBuffer(),
     );
     assert.ok(shotBytes.length > 1_000);
 
@@ -382,7 +378,9 @@ test('shot and assembly previews render immutable final-timeline semantics', asy
     assert.equal(assembly.shotId, null);
     assert.equal(assembly.durationMs, 2000);
     const assemblyBytes = Buffer.from(
-      await (await fixture.human.getPreviewArtifact(fixture.projectId, assembly.id)).arrayBuffer(),
+      await (
+        await fixture.human.getPreviewArtifact(fixture.projectId, assembly.id)
+      ).arrayBuffer(),
     );
     assert.ok(assemblyBytes.length > 1_000);
 
@@ -458,8 +456,12 @@ test('artifacts render atomically in both formats and persist jobs across restar
   assert.equal(completed.artifacts.length, 2);
   for (const artifact of completed.artifacts) {
     const metadata = probe(artifact.publishedPath);
-    const video = metadata.streams.find((stream) => stream.codec_type === 'video');
-    const audio = metadata.streams.find((stream) => stream.codec_type === 'audio');
+    const video = metadata.streams.find(
+      (stream) => stream.codec_type === 'video',
+    );
+    const audio = metadata.streams.find(
+      (stream) => stream.codec_type === 'audio',
+    );
     assert.ok(video);
     assert.ok(audio);
     assert.ok(Math.abs(Number(metadata.format.duration) - 2) < 0.15);
@@ -490,12 +492,7 @@ test('artifacts render atomically in both formats and persist jobs across restar
   assert.ok(frozenBlue[2]! > 180 && frozenBlue[0]! < 80);
   const stillRed = pixel(landscapeArtifact.publishedPath, 1.5, 960, 540);
   assert.ok(stillRed[0]! > 180 && stillRed[2]! < 80);
-  const landscapeBottom = pixel(
-    landscapeArtifact.publishedPath,
-    0.5,
-    20,
-    1000,
-  );
+  const landscapeBottom = pixel(landscapeArtifact.publishedPath, 0.5, 20, 1000);
   const verticalCaptionBand = pixel(
     verticalArtifact.publishedPath,
     0.5,
@@ -527,7 +524,8 @@ test('artifacts render atomically in both formats and persist jobs across restar
     formats: ['landscape'],
   });
   assert.equal(
-    (await fixture.human.cancelRenderJob(fixture.projectId, cancelable.id)).status,
+    (await fixture.human.cancelRenderJob(fixture.projectId, cancelable.id))
+      .status,
     'canceled',
   );
   const retry = await fixture.human.retryRenderJob(
@@ -549,9 +547,14 @@ test('artifacts render atomically in both formats and persist jobs across restar
     formats: ['landscape'],
   });
   const selectedAssets = await fixture.human.getAssets(fixture.projectId);
-  const managedVideo = selectedAssets.assets.find((asset) => asset.kind === 'video')!;
+  const managedVideo = selectedAssets.assets.find(
+    (asset) => asset.kind === 'video',
+  )!;
   await unlink(managedVideo.managedPath);
-  const failed = await fixture.human.runRenderJob(fixture.projectId, failing.id);
+  const failed = await fixture.human.runRenderJob(
+    fixture.projectId,
+    failing.id,
+  );
   assert.equal(failed.status, 'failed');
   assert.equal(
     createHash('sha256')

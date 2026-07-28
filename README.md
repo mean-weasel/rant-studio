@@ -111,6 +111,23 @@ Individual gates include `npm run check`, `npm run build`,
 `npm run test:e2e`, `npm run test:performance`, `npm run test:media`, and
 `npm run test:a11y`.
 
+## Continuous integration
+
+GitHub Actions runs the same release contract for pull requests and merge-queue
+groups on Node.js 24. The workflow separates quality, build, Node/media, and
+Playwright work so failures are attributable, then reports one stable required
+status named **CI Gate**.
+
+The quality job blocks on ESLint, Prettier, TypeScript, production Knip, and a
+maximum-lines ratchet. New production files are limited to 500 lines and new
+test files to 650 lines. Oversized V1 files have explicit frozen ceilings in
+`scripts/check-max-lines.mjs`; they may shrink but may not grow while they are
+split into smaller modules.
+
+Failed Playwright runs retain traces, screenshots, and the HTML report as a
+GitHub Actions artifact. Run `npm ci && npm run test:release` before pushing to
+reproduce the complete CI contract locally.
+
 ## Troubleshooting and limitations
 
 - `REVISION_CONFLICT`: refresh the browser/CLI view and retry with the current

@@ -27,7 +27,9 @@ export function ProductionIntake() {
   const [transcriptJson, setTranscriptJson] = useState(
     '{\n  "words": [\n    { "text": "Hello", "startMs": 0, "endMs": 500 }\n  ]\n}',
   );
-  const [status, setStatus] = useState('Connect to the loopback service to begin.');
+  const [status, setStatus] = useState(
+    'Connect to the loopback service to begin.',
+  );
   const [busy, setBusy] = useState(false);
   const client = useMemo(
     () => new RantClient({ baseUrl, credential }),
@@ -37,7 +39,10 @@ export function ProductionIntake() {
     setProject((current) => (current ? { ...current, revision } : current));
   }, []);
 
-  async function perform(label: string, work: () => Promise<IntakeProjectSnapshot>) {
+  async function perform(
+    label: string,
+    work: () => Promise<IntakeProjectSnapshot>,
+  ) {
     setBusy(true);
     setStatus(label);
     try {
@@ -162,7 +167,10 @@ export function ProductionIntake() {
 
       {connected && !project ? (
         <div className="intake-grid">
-          <section className="intake-card" aria-labelledby="new-project-heading">
+          <section
+            className="intake-card"
+            aria-labelledby="new-project-heading"
+          >
             <h2 id="new-project-heading">New project</h2>
             <label>
               Project name
@@ -179,9 +187,15 @@ export function ProductionIntake() {
               Create project
             </button>
           </section>
-          <section className="intake-card" aria-labelledby="existing-project-heading">
+          <section
+            className="intake-card"
+            aria-labelledby="existing-project-heading"
+          >
             <h2 id="existing-project-heading">Open existing project</h2>
-            <p>Reconnect to the durable project after a browser or service restart.</p>
+            <p>
+              Reconnect to the durable project after a browser or service
+              restart.
+            </p>
             <label>
               Existing project ID
               <input
@@ -213,13 +227,17 @@ export function ProductionIntake() {
           <div className="intake-grid">
             <section className="intake-card" aria-labelledby="audio-heading">
               <h2 id="audio-heading">1 · Narration</h2>
-              <p>WAV is supported in V1. The service validates and copies it.</p>
+              <p>
+                WAV is supported in V1. The service validates and copies it.
+              </p>
               <label>
                 Narration WAV
                 <input
                   type="file"
                   accept=".wav,audio/wav"
-                  onChange={(event) => setNarration(event.target.files?.[0] ?? null)}
+                  onChange={(event) =>
+                    setNarration(event.target.files?.[0] ?? null)
+                  }
                 />
               </label>
               <button
@@ -247,11 +265,14 @@ export function ProductionIntake() {
               )}
             </section>
 
-            <section className="intake-card" aria-labelledby="transcribe-heading">
+            <section
+              className="intake-card"
+              aria-labelledby="transcribe-heading"
+            >
               <h2 id="transcribe-heading">2 · Transcript</h2>
               <p>
-                Run the deterministic adapter, or import provider-compatible JSON.
-                Retries create new attempts.
+                Run the deterministic adapter, or import provider-compatible
+                JSON. Retries create new attempts.
               </p>
               <button
                 type="button"
@@ -276,7 +297,11 @@ export function ProductionIntake() {
                     onChange={(event) => setTranscriptJson(event.target.value)}
                   />
                 </label>
-                <button type="button" disabled={busy} onClick={importTranscript}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={importTranscript}
+                >
                   Import transcript
                 </button>
               </details>
@@ -284,15 +309,22 @@ export function ProductionIntake() {
                 {project.attempts.map((attempt) => (
                   <li key={attempt.id}>
                     <span>{attempt.provider}</span>
-                    <strong data-status={attempt.status}>{attempt.status}</strong>
-                    {attempt.errorMessage ? <small>{attempt.errorMessage}</small> : null}
+                    <strong data-status={attempt.status}>
+                      {attempt.status}
+                    </strong>
+                    {attempt.errorMessage ? (
+                      <small>{attempt.errorMessage}</small>
+                    ) : null}
                   </li>
                 ))}
               </ul>
             </section>
           </div>
 
-          <section className="intake-card transcript-result" aria-labelledby="raw-heading">
+          <section
+            className="intake-card transcript-result"
+            aria-labelledby="raw-heading"
+          >
             <p className="eyebrow">Untouched provider result</p>
             <h2 id="raw-heading">Raw transcript</h2>
             {project.transcript ? (

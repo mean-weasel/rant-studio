@@ -107,7 +107,9 @@ async function openScaleLedger(page: Page) {
   await page
     .getByRole('button', { name: 'Open production Shot Ledger' })
     .click();
-  await expect(page.getByRole('status').filter({ hasText: 'Showing 150 of 150' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Showing 150 of 150' }),
+  ).toBeVisible();
   const loadMs = Date.now() - loadStarted;
 
   return {
@@ -127,18 +129,24 @@ test('150-shot scale performance windows rows and preserves live interaction sta
   const fixture = await openScaleLedger(page);
   try {
     expect(fixture.loadMs).toBeLessThan(2_000);
-    const ledgerWindow = page.getByRole('list', { name: 'Windowed Shot Ledger' });
+    const ledgerWindow = page.getByRole('list', {
+      name: 'Windowed Shot Ledger',
+    });
     await expect(ledgerWindow).toHaveAttribute('data-total-shots', '150');
     await expect(ledgerWindow).toHaveAttribute('data-rendered-shots', '20');
     await expect(ledgerWindow.locator(':scope > li')).toHaveCount(20);
 
     const searchStarted = Date.now();
     await page.getByLabel('Search shots').fill('Scale beat 149');
-    await expect(page.getByRole('status').filter({ hasText: 'Showing 1 of 150' })).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Showing 1 of 150' }),
+    ).toBeVisible();
     await expect(ledgerWindow).toContainText('Scale beat 149');
     expect(Date.now() - searchStarted).toBeLessThan(500);
     await page.getByLabel('Search shots').fill('');
-    await expect(page.getByRole('status').filter({ hasText: 'Showing 150 of 150' })).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Showing 150 of 150' }),
+    ).toBeVisible();
 
     await ledgerWindow.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
@@ -146,14 +154,19 @@ test('150-shot scale performance windows rows and preserves live interaction sta
     });
     await expect(ledgerWindow.locator(':scope > li')).toHaveCount(20);
     await expect(ledgerWindow).toContainText('Scale beat 150');
-    const scrollBefore = await ledgerWindow.evaluate((element) => element.scrollTop);
+    const scrollBefore = await ledgerWindow.evaluate(
+      (element) => element.scrollTop,
+    );
     expect(scrollBefore).toBeGreaterThan(1_000);
 
     await page.getByLabel('Checkpoint name').fill('Unsaved scale draft');
     const rows = ledgerWindow.locator(':scope > li');
     const rowCount = await rows.count();
     await rows.nth(rowCount - 1).click();
-    const selectedId = await rows.nth(rowCount - 1).locator('code').textContent();
+    const selectedId = await rows
+      .nth(rowCount - 1)
+      .locator('code')
+      .textContent();
 
     const ledger = await fixture.human.getLedger(fixture.projectId);
     await fixture.human.createAssetTask(fixture.projectId, {
@@ -162,18 +175,24 @@ test('150-shot scale performance windows rows and preserves live interaction sta
       shotIds: [ledger.shots.at(-1)!.id],
     });
     await page.getByRole('button', { name: 'Refresh live state' }).click();
-    await expect(page.getByLabel('Checkpoint name')).toHaveValue('Unsaved scale draft');
-    expect(await ledgerWindow.evaluate((element) => element.scrollTop)).toBeGreaterThanOrEqual(
-      scrollBefore - 2,
+    await expect(page.getByLabel('Checkpoint name')).toHaveValue(
+      'Unsaved scale draft',
     );
-    await expect(ledgerWindow.locator('li[data-selected="true"] code')).toHaveText(
-      selectedId ?? '',
-    );
+    expect(
+      await ledgerWindow.evaluate((element) => element.scrollTop),
+    ).toBeGreaterThanOrEqual(scrollBefore - 2);
+    await expect(
+      ledgerWindow.locator('li[data-selected="true"] code'),
+    ).toHaveText(selectedId ?? '');
     await page.getByLabel('Task state').selectOption('active');
-    await expect(page.getByRole('status').filter({ hasText: 'Showing 1 of 150' })).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Showing 1 of 150' }),
+    ).toBeVisible();
     await page.getByLabel('Task state').selectOption('all');
     await page.getByRole('button', { name: 'Jump to current shot' }).click();
-    await expect(ledgerWindow.locator('li[data-selected="true"]')).toBeFocused();
+    await expect(
+      ledgerWindow.locator('li[data-selected="true"]'),
+    ).toBeFocused();
   } finally {
     await fixture.service.close();
     fixture.store.close();
@@ -190,10 +209,16 @@ test('responsive overflow a11y keeps transcript, ledger, and candidate windows b
     expect(transcriptWindowCount).toBeGreaterThanOrEqual(3);
     for (let index = 0; index < transcriptWindowCount; index += 1) {
       expect(
-        Number(await transcriptWindows.nth(index).getAttribute('data-rendered-words')),
+        Number(
+          await transcriptWindows
+            .nth(index)
+            .getAttribute('data-rendered-words'),
+        ),
       ).toBeLessThanOrEqual(40);
       expect(
-        Number(await transcriptWindows.nth(index).getAttribute('data-total-words')),
+        Number(
+          await transcriptWindows.nth(index).getAttribute('data-total-words'),
+        ),
       ).toBe(150);
     }
     await page
@@ -213,24 +238,29 @@ test('responsive overflow a11y keeps transcript, ledger, and candidate windows b
     const ledger = await fixture.human.getLedger(fixture.projectId);
     let revision = ledger.revision;
     for (let index = 0; index < 8; index += 1) {
-      const next = await fixture.agent.uploadVisualCandidate(fixture.projectId, {
-        bytesBase64: Buffer.concat([
-          Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-          Buffer.alloc(30),
-          Buffer.from([index + 1, index + 21]),
-        ]).toString('base64'),
-        expectedRevision: revision,
-        mimeType: 'image/png',
-        originalName: `candidate-${index}-${'long-filename'.repeat(20)}.png`,
-        shotIds: [ledger.shots[0]!.id],
-      });
+      const next = await fixture.agent.uploadVisualCandidate(
+        fixture.projectId,
+        {
+          bytesBase64: Buffer.concat([
+            Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+            Buffer.alloc(30),
+            Buffer.from([index + 1, index + 21]),
+          ]).toString('base64'),
+          expectedRevision: revision,
+          mimeType: 'image/png',
+          originalName: `candidate-${index}-${'long-filename'.repeat(20)}.png`,
+          shotIds: [ledger.shots[0]!.id],
+        },
+      );
       revision = next.revision;
     }
 
     await page.getByRole('button', { name: 'Open visual workspace' }).click();
     await page.setViewportSize({ width: 320, height: 800 });
     await expect(page.getByLabel('Search shots')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Jump to first incomplete' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Jump to first incomplete' }),
+    ).toBeVisible();
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
       offenders: [...document.querySelectorAll<HTMLElement>('body *')]
@@ -261,10 +291,14 @@ test('responsive overflow a11y keeps transcript, ledger, and candidate windows b
       overflowX: getComputedStyle(element).overflowX,
       scrollWidth: element.scrollWidth,
     }));
-    expect(trayDimensions.scrollWidth).toBeGreaterThan(trayDimensions.clientWidth);
+    expect(trayDimensions.scrollWidth).toBeGreaterThan(
+      trayDimensions.clientWidth,
+    );
     expect(['auto', 'scroll']).toContain(trayDimensions.overflowX);
 
-    const ledgerWindow = page.getByRole('list', { name: 'Windowed Shot Ledger' });
+    const ledgerWindow = page.getByRole('list', {
+      name: 'Windowed Shot Ledger',
+    });
     await expect(ledgerWindow.locator(':scope > li')).toHaveCount(20);
     await expect(ledgerWindow.locator(':scope > li').first()).toHaveAttribute(
       'aria-setsize',

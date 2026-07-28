@@ -29,6 +29,7 @@ test('service authority permits additive agent work but rejects protected decisi
 test('authority rejects unknown operations instead of defaulting open', () => {
   assert.throws(
     () => assertAuthorized(agent, 'publish_video' as never),
-    (error: unknown) => error instanceof AuthorityError && error.code === 'FORBIDDEN',
+    (error: unknown) =>
+      error instanceof AuthorityError && error.code === 'FORBIDDEN',
   );
 });

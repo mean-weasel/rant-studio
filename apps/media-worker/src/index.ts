@@ -28,10 +28,7 @@ export interface MediaWorkerPort {
 
 type RenderResult = Omit<RenderArtifactSnapshot, 'id'>;
 
-const formats: Record<
-  OutputFormat,
-  { height: number; width: number }
-> = {
+const formats: Record<OutputFormat, { height: number; width: number }> = {
   landscape: { height: 1080, width: 1920 },
   vertical: { height: 1920, width: 1080 },
 };
@@ -129,7 +126,10 @@ function captionImage(
       });
     });
   });
-  writeFileSync(path, Buffer.concat([Buffer.from(`P6\n${width} ${height}\n255\n`), pixels]));
+  writeFileSync(
+    path,
+    Buffer.concat([Buffer.from(`P6\n${width} ${height}\n255\n`), pixels]),
+  );
 }
 
 function visualFilter(
@@ -243,7 +243,10 @@ export function renderProject(
       const segmentDirectory = join(temporaryDirectory, `${format}-segments`);
       mkdirSync(segmentDirectory, { recursive: true });
       const segmentPaths = plan.shots.map((shot, index) => {
-        const path = join(segmentDirectory, `${String(index).padStart(4, '0')}.mp4`);
+        const path = join(
+          segmentDirectory,
+          `${String(index).padStart(4, '0')}.mp4`,
+        );
         renderSegment(plan, shot, format, path);
         return path;
       });

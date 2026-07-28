@@ -10,9 +10,14 @@ import { startLocalService } from '../apps/service/src/server.ts';
 test('production intake shows the same persisted narration and timestamp words in the browser', async ({
   page,
 }) => {
-  const directory = await mkdtemp(join(tmpdir(), 'rant-studio-browser-intake-'));
+  const directory = await mkdtemp(
+    join(tmpdir(), 'rant-studio-browser-intake-'),
+  );
   const store = openProjectStore(join(directory, 'project.db'));
-  const credential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const credential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const service = await startLocalService({ port: 0, store });
 
   try {
@@ -23,7 +28,9 @@ test('production intake shows the same persisted narration and timestamp words i
 
     await page.getByLabel('Project name').fill('Browser Intake');
     await page.getByRole('button', { name: 'Create project' }).click();
-    await expect(page.getByRole('heading', { name: 'Browser Intake' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Browser Intake' }),
+    ).toBeVisible();
 
     await page.getByLabel('Narration WAV').setInputFiles({
       buffer: Buffer.concat([
@@ -38,13 +45,15 @@ test('production intake shows the same persisted narration and timestamp words i
     await page.getByRole('button', { name: 'Upload narration' }).click();
     await expect(page.getByText('narration.wav')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Transcribe deterministically' }).click();
-    await expect(page.getByRole('table', { name: 'Word timestamps' })).toContainText(
-      'Rant',
-    );
-    await expect(page.getByRole('table', { name: 'Word timestamps' })).toContainText(
-      '0–320 ms',
-    );
+    await page
+      .getByRole('button', { name: 'Transcribe deterministically' })
+      .click();
+    await expect(
+      page.getByRole('table', { name: 'Word timestamps' }),
+    ).toContainText('Rant');
+    await expect(
+      page.getByRole('table', { name: 'Word timestamps' }),
+    ).toContainText('0–320 ms');
     await expect(page.getByText('Revision 3', { exact: true })).toBeVisible();
   } finally {
     await service.close();

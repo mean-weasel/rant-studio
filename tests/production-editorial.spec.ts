@@ -11,9 +11,14 @@ import { RantClient } from '../packages/api/src/index.ts';
 test('production transcript proposal Shot Ledger asset candidate agent activity preserves human authority', async ({
   page,
 }) => {
-  const directory = await mkdtemp(join(tmpdir(), 'rant-studio-browser-editorial-'));
+  const directory = await mkdtemp(
+    join(tmpdir(), 'rant-studio-browser-editorial-'),
+  );
   const store = openProjectStore(join(directory, 'project.db'));
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: [
@@ -58,7 +63,9 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
       }),
     );
     await page.getByRole('button', { name: 'Import transcript' }).click();
-    await page.getByRole('button', { name: 'Open editorial workspace' }).click();
+    await page
+      .getByRole('button', { name: 'Open editorial workspace' })
+      .click();
 
     await page.getByLabel('Word', { exact: true }).selectOption({ index: 1 });
     await page.getByLabel('Replacement').fill('application');
@@ -67,12 +74,16 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
       page.getByRole('article').filter({ hasText: 'Raw provider transcript' }),
     ).toContainText('Every app thinks');
     await expect(
-      page.getByRole('article').filter({ hasText: 'Corrected working transcript' }),
+      page
+        .getByRole('article')
+        .filter({ hasText: 'Corrected working transcript' }),
     ).toContainText('Every application thinks');
 
     await page.getByLabel('Pacing').selectOption('Punchy');
     await page.getByLabel('Starting shots').fill('3');
-    const projectId = (await page.locator('.intake-project code').textContent())!;
+    const projectId = (await page
+      .locator('.intake-project code')
+      .textContent())!;
     const agent = new RantClient({
       baseUrl: service.url,
       credential: agentCredential.token,
@@ -81,57 +92,101 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
     async function submitExternalProposal() {
       const editorial = await agent.getEditorial(projectId);
       const activity = await agent.getActivity(projectId, { status: 'queued' });
-      const task = activity.tasks.find((candidate) => candidate.kind === 'proposal')!;
+      const task = activity.tasks.find(
+        (candidate) => candidate.kind === 'proposal',
+      )!;
       await agent.claimTask(projectId, task.id, { sessionId: agentSession.id });
       await agent.submitShotProposal(projectId, task.id, {
         baseProjectRevision: task.baseRevision,
         baseTranscriptRevisionId: editorial.effectiveTranscript.id,
         shots: [
-          { endWordOrdinal: 1, rationale: 'Open.', startWordOrdinal: 0, theme: 'Open' },
-          { endWordOrdinal: 3, rationale: 'Middle.', startWordOrdinal: 2, theme: 'Middle' },
-          { endWordOrdinal: 5, rationale: 'Close.', startWordOrdinal: 4, theme: 'Close' },
+          {
+            endWordOrdinal: 1,
+            rationale: 'Open.',
+            startWordOrdinal: 0,
+            theme: 'Open',
+          },
+          {
+            endWordOrdinal: 3,
+            rationale: 'Middle.',
+            startWordOrdinal: 2,
+            theme: 'Middle',
+          },
+          {
+            endWordOrdinal: 5,
+            rationale: 'Close.',
+            startWordOrdinal: 4,
+            theme: 'Close',
+          },
         ],
       });
     }
-    await page.getByRole('button', { name: 'Queue external shot proposal' }).click();
+    await page
+      .getByRole('button', { name: 'Queue external shot proposal' })
+      .click();
     await submitExternalProposal();
 
-    await expect(page.getByText('Agent result · ready for review')).toBeVisible();
+    await expect(
+      page.getByText('Agent result · ready for review'),
+    ).toBeVisible();
     await expect(page.locator('.proposal-review article')).toHaveCount(3);
     await expect(page.locator('.proposal-chunk').first()).toContainText(
       'Every application',
     );
-    await page.getByRole('button', { name: 'Move boundary later' }).first().click();
+    await page
+      .getByRole('button', { name: 'Move boundary later' })
+      .first()
+      .click();
     await expect(
-      page.getByRole('status').filter({ hasText: 'exact coverage revalidated' }),
+      page
+        .getByRole('status')
+        .filter({ hasText: 'exact coverage revalidated' }),
     ).toBeVisible();
 
     await page.getByRole('button', { name: 'Reject proposal' }).click();
-    await expect(page.getByRole('button', { name: 'Queue regenerated external proposal' })).toBeVisible();
-    await page.getByRole('button', { name: 'Queue regenerated external proposal' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Queue regenerated external proposal' }),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Queue regenerated external proposal' })
+      .click();
     await submitExternalProposal();
-    await expect(page.getByText('Agent result · ready for review')).toBeVisible();
+    await expect(
+      page.getByText('Agent result · ready for review'),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Accept shots' }).click();
-    await expect(page.getByText('Accepted shot ledger', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Accepted shot ledger', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('3 stable shots')).toBeVisible();
-    await page.getByRole('button', { name: 'Open production Shot Ledger' }).click();
+    await page
+      .getByRole('button', { name: 'Open production Shot Ledger' })
+      .click();
     await page.getByLabel('Checkpoint name').fill('Before edits');
     await page.getByRole('button', { name: 'Name checkpoint' }).click();
-    await expect(page.getByRole('button', { name: 'Restore Before edits' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Restore Before edits' }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Move up' }).nth(1).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Shot moved' })).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Shot moved' }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Split' }).first().click();
     await expect(page.locator('.production-ledger-rows > li')).toHaveCount(4);
     await page.getByRole('button', { name: 'Undo last ledger edit' }).click();
     await expect(page.locator('.production-ledger-rows > li')).toHaveCount(3);
     await page.getByRole('button', { name: 'Restore Before edits' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Restored' })).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Restored' }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Open visual workspace' }).click();
     await page.getByRole('button', { name: 'Refresh candidates' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Visual workspace loaded' })).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Visual workspace loaded' }),
+    ).toBeVisible();
     await page
       .getByRole('group', { name: 'Explicit shot targets' })
       .getByRole('checkbox')
@@ -145,7 +200,9 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
       mimeType: 'image/png',
       name: 'human.png',
     });
-    await page.getByRole('button', { name: 'Upload to selected shots' }).click();
+    await page
+      .getByRole('button', { name: 'Upload to selected shots' })
+      .click();
     await expect(page.getByText('1 candidate', { exact: true })).toHaveCount(2);
     await page.getByRole('button', { name: 'Use this visual' }).first().click();
     await expect(
@@ -157,12 +214,16 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
       'Find a visual candidate for Shot 2.',
     );
     await expect(page.getByLabel('Agent task targets')).toContainText('Shot 2');
-    await page.getByRole('button', { name: 'Dispatch task to CLI agent' }).click();
+    await page
+      .getByRole('button', { name: 'Dispatch task to CLI agent' })
+      .click();
     await expect(page.getByText(/queued · asset/)).toBeVisible();
 
     const activity = await agent.getActivity(projectId, { status: 'queued' });
     const assetTask = activity.tasks[0]!;
-    await agent.claimTask(projectId, assetTask.id, { sessionId: agentSession.id });
+    await agent.claimTask(projectId, assetTask.id, {
+      sessionId: agentSession.id,
+    });
     await agent.transitionTask(projectId, assetTask.id, {
       expectedProjectRevision: assetTask.baseRevision,
       idempotencyKey: 'browser-running',
@@ -212,7 +273,9 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
     ).toBeVisible();
     await expect(page.getByText(/succeeded · asset/)).toBeVisible();
     await expect(
-      page.getByText('Agent attached a second candidate without changing selection.'),
+      page.getByText(
+        'Agent attached a second candidate without changing selection.',
+      ),
     ).toBeVisible();
     await expect(
       page.getByText(
@@ -224,7 +287,9 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
     await liveTray.evaluate((element) => {
       element.scrollLeft = element.scrollWidth;
     });
-    const scrollBefore = await liveTray.evaluate((element) => element.scrollLeft);
+    const scrollBefore = await liveTray.evaluate(
+      (element) => element.scrollLeft,
+    );
     expect(scrollBefore).toBeGreaterThan(0);
     const checkpointDraft = page.getByLabel('Checkpoint name');
     await checkpointDraft.fill('Unsaved during live agent work');
@@ -246,16 +311,24 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
       originalName: 'agent-live.png',
       shotIds: assetTask.shotIds,
     });
-    await expect(liveTray.locator(':scope > div')).toHaveCount(candidateCountBefore + 1);
-    expect(await liveTray.evaluate((element) => element.scrollLeft)).toBeGreaterThanOrEqual(
-      scrollBefore - 1,
+    await expect(liveTray.locator(':scope > div')).toHaveCount(
+      candidateCountBefore + 1,
     );
+    expect(
+      await liveTray.evaluate((element) => element.scrollLeft),
+    ).toBeGreaterThanOrEqual(scrollBefore - 1);
     await expect(checkpointDraft).toHaveValue('Unsaved during live agent work');
     await expect(checkpointDraft).toBeFocused();
-    expect(await checkpointDraft.evaluate((element) => (element as HTMLInputElement).selectionStart))
-      .toBe(8);
-    expect(await checkpointDraft.evaluate((element) => (element as HTMLInputElement).selectionEnd))
-      .toBe(14);
+    expect(
+      await checkpointDraft.evaluate(
+        (element) => (element as HTMLInputElement).selectionStart,
+      ),
+    ).toBe(8);
+    expect(
+      await checkpointDraft.evaluate(
+        (element) => (element as HTMLInputElement).selectionEnd,
+      ),
+    ).toBe(14);
     await expect(
       page.locator('.production-ledger-rows > li[data-selected="true"] code'),
     ).toHaveText(selectedLedgerId ?? '');
@@ -265,7 +338,9 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
   }
 });
 
-test('production browser never accepts an external-agent credential', async ({ page }) => {
+test('production browser never accepts an external-agent credential', async ({
+  page,
+}) => {
   await page.goto('/?mode=intake');
   await expect(page.getByLabel('Agent credential')).toHaveCount(0);
 });

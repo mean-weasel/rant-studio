@@ -18,7 +18,10 @@ const wav = Buffer.concat([
 async function editorialFixture() {
   const root = await mkdtemp(join(tmpdir(), 'rant-studio-editorial-'));
   const store = openProjectStore(join(root, 'project.db'));
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: ['project:read', 'task:claim', 'proposal:write'],
@@ -80,27 +83,38 @@ test('corrections preserve raw words and accepted agent proposals create exact s
       pacing: 'Punchy',
     });
     const session = await fixture.agent.attachAgent(fixture.intake.id);
-    await fixture.agent.claimProposalTask(fixture.intake.id, task.id, session.id);
-    const proposal = await fixture.agent.submitShotProposal(fixture.intake.id, task.id, {
-      baseProjectRevision: 4,
-      baseTranscriptRevisionId: corrected.effectiveTranscript.id,
-      shots: [
-        {
-          endWordOrdinal: 1,
-          rationale: 'Open with the premise.',
-          startWordOrdinal: 0,
-          theme: 'Premise',
-        },
-        {
-          endWordOrdinal: 3,
-          rationale: 'Land the claim.',
-          startWordOrdinal: 2,
-          theme: 'Claim',
-        },
-      ],
-    });
+    await fixture.agent.claimProposalTask(
+      fixture.intake.id,
+      task.id,
+      session.id,
+    );
+    const proposal = await fixture.agent.submitShotProposal(
+      fixture.intake.id,
+      task.id,
+      {
+        baseProjectRevision: 4,
+        baseTranscriptRevisionId: corrected.effectiveTranscript.id,
+        shots: [
+          {
+            endWordOrdinal: 1,
+            rationale: 'Open with the premise.',
+            startWordOrdinal: 0,
+            theme: 'Premise',
+          },
+          {
+            endWordOrdinal: 3,
+            rationale: 'Land the claim.',
+            startWordOrdinal: 2,
+            theme: 'Claim',
+          },
+        ],
+      },
+    );
     assert.equal(proposal.status, 'ready');
-    assert.equal((await fixture.human.getProject(fixture.intake.id)).revision, 4);
+    assert.equal(
+      (await fixture.human.getProject(fixture.intake.id)).revision,
+      4,
+    );
 
     await assert.rejects(
       fixture.agent.acceptShotProposal(fixture.intake.id, proposal.id, {
@@ -148,7 +162,11 @@ test('invalid and stale proposals fail without partially changing accepted shots
       pacing: 'Standard',
     });
     const session = await fixture.agent.attachAgent(fixture.intake.id);
-    await fixture.agent.claimProposalTask(fixture.intake.id, task.id, session.id);
+    await fixture.agent.claimProposalTask(
+      fixture.intake.id,
+      task.id,
+      session.id,
+    );
 
     await assert.rejects(
       fixture.agent.submitShotProposal(fixture.intake.id, task.id, {
@@ -172,20 +190,27 @@ test('invalid and stale proposals fail without partially changing accepted shots
       (error: unknown) =>
         error instanceof RantApiError && error.code === 'INVALID_PROPOSAL',
     );
-    assert.equal((await fixture.human.getEditorial(fixture.intake.id)).proposals.length, 0);
+    assert.equal(
+      (await fixture.human.getEditorial(fixture.intake.id)).proposals.length,
+      0,
+    );
 
-    const proposal = await fixture.agent.submitShotProposal(fixture.intake.id, task.id, {
-      baseProjectRevision: editorial.revision,
-      baseTranscriptRevisionId: editorial.effectiveTranscript.id,
-      shots: [
-        {
-          endWordOrdinal: 3,
-          rationale: 'One complete shot.',
-          startWordOrdinal: 0,
-          theme: 'Whole thought',
-        },
-      ],
-    });
+    const proposal = await fixture.agent.submitShotProposal(
+      fixture.intake.id,
+      task.id,
+      {
+        baseProjectRevision: editorial.revision,
+        baseTranscriptRevisionId: editorial.effectiveTranscript.id,
+        shots: [
+          {
+            endWordOrdinal: 3,
+            rationale: 'One complete shot.',
+            startWordOrdinal: 0,
+            theme: 'Whole thought',
+          },
+        ],
+      },
+    );
     const corrected = await fixture.human.correctTranscript(fixture.intake.id, {
       expectedRevision: editorial.revision,
       replacementText: 'applications',
