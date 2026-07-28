@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -32,18 +33,41 @@ test('production intake shows the same persisted narration and timestamp words i
       page.getByRole('heading', { name: 'Browser Intake' }),
     ).toBeVisible();
 
-    await page.getByLabel('Narration WAV').setInputFiles({
-      buffer: Buffer.concat([
-        Buffer.from('RIFF'),
-        Buffer.alloc(4),
-        Buffer.from('WAVEfmt '),
-        Buffer.alloc(32),
-      ]),
-      mimeType: 'audio/wav',
-      name: 'narration.wav',
+    const mp3Path = join(directory, 'narration.mp3');
+    const ffmpeg = spawnSync(
+      'ffmpeg',
+      [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-y',
+        '-f',
+        'lavfi',
+        '-i',
+        'sine=frequency=520:duration=0.4',
+        '-c:a',
+        'libmp3lame',
+        mp3Path,
+      ],
+      { encoding: 'utf8' },
+    );
+    expect(ffmpeg.status, ffmpeg.stderr || ffmpeg.stdout).toBe(0);
+    const narrationInput = page.getByLabel('Narration file');
+    await expect(narrationInput).toHaveAttribute(
+      'accept',
+      '.wav,.mp3,.mp4,audio/wav,audio/mpeg,video/mp4',
+    );
+    await narrationInput.setInputFiles({
+      mimeType: 'audio/mpeg',
+      name: 'narration.mp3',
+      buffer: await import('node:fs/promises').then(({ readFile }) =>
+        readFile(mp3Path),
+      ),
     });
     await page.getByRole('button', { name: 'Upload narration' }).click();
-    await expect(page.getByText('narration.wav')).toBeVisible();
+    await expect(page.getByText('narration.mp3')).toBeVisible();
+    await expect(page.getByText('audio/mpeg')).toBeVisible();
+    await expect(page.getByText('48 kHz PCM WAV')).toBeVisible();
 
     await page
       .getByRole('button', { name: 'Transcribe deterministically' })

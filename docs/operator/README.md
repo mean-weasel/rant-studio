@@ -12,6 +12,11 @@ protected mutation authority; agent credentials are intentionally restricted.
 Revoke or rotate credentials by creating a new local data root until a
 credential-management screen is added.
 
+Narration intake accepts WAV, MP3, and MP4 files. MP4 narration must contain a
+decodable audio stream. The original file is retained under managed project
+media, while transcription, preview, and rendering use a normalized 48 kHz PCM
+WAV derivative.
+
 ## Backup and restore
 
 1. Stop the service.

@@ -315,6 +315,17 @@ CREATE UNIQUE INDEX job_attempts_job_idempotency
   WHERE idempotency_key IS NOT NULL;
 `;
 
+const migrationNine = `
+ALTER TABLE source_audio ADD COLUMN original_path TEXT;
+ALTER TABLE source_audio ADD COLUMN normalized_checksum TEXT;
+ALTER TABLE source_audio
+  ADD COLUMN normalized_mime_type TEXT NOT NULL DEFAULT 'audio/wav';
+UPDATE source_audio
+SET original_path = managed_path,
+    normalized_checksum = checksum
+WHERE original_path IS NULL OR normalized_checksum IS NULL;
+`;
+
 export function applyMigrations(database: BetterSqlite3.Database): void {
   database.exec(`
     PRAGMA foreign_keys = ON;
@@ -333,6 +344,7 @@ export function applyMigrations(database: BetterSqlite3.Database): void {
     { sql: migrationSix, version: 6 },
     { sql: migrationSeven, version: 7 },
     { sql: migrationEight, version: 8 },
+    { sql: migrationNine, version: 9 },
   ];
   for (const migration of migrations) {
     const applied = database

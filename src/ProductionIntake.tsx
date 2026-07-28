@@ -11,6 +11,15 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+function narrationMimeType(file: File): string {
+  if (file.type) return file.type;
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  if (extension === 'mp3') return 'audio/mpeg';
+  if (extension === 'mp4') return 'video/mp4';
+  if (extension === 'wav') return 'audio/wav';
+  return 'application/octet-stream';
+}
+
 function messageFor(error: unknown): string {
   if (error instanceof RantApiError) return `${error.code}: ${error.message}`;
   return error instanceof Error ? error.message : 'Unknown intake error';
@@ -92,7 +101,7 @@ export function ProductionIntake() {
       client.uploadNarration(project.id, {
         bytesBase64: bytesToBase64(bytes),
         expectedRevision: project.revision,
-        mimeType: narration.type || 'audio/wav',
+        mimeType: narrationMimeType(narration),
         originalName: narration.name,
       }),
     );
@@ -228,13 +237,14 @@ export function ProductionIntake() {
             <section className="intake-card" aria-labelledby="audio-heading">
               <h2 id="audio-heading">1 · Narration</h2>
               <p>
-                WAV is supported in V1. The service validates and copies it.
+                Upload WAV or MP3 audio, or an MP4 video with audio. The
+                original is preserved and a WAV working copy is created.
               </p>
               <label>
-                Narration WAV
+                Narration file
                 <input
                   type="file"
-                  accept=".wav,audio/wav"
+                  accept=".wav,.mp3,.mp4,audio/wav,audio/mpeg,video/mp4"
                   onChange={(event) =>
                     setNarration(event.target.files?.[0] ?? null)
                   }
@@ -252,6 +262,14 @@ export function ProductionIntake() {
                   <div>
                     <dt>Source</dt>
                     <dd>{project.sourceAudio.originalName}</dd>
+                  </div>
+                  <div>
+                    <dt>Original type</dt>
+                    <dd>{project.sourceAudio.mimeType}</dd>
+                  </div>
+                  <div>
+                    <dt>Working audio</dt>
+                    <dd>48 kHz PCM WAV</dd>
                   </div>
                   <div>
                     <dt>Checksum</dt>

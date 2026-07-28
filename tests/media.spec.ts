@@ -51,7 +51,7 @@ test('production preview preflight export render rechecks stale authority and pl
     await page.getByRole('button', { name: 'Connect' }).click();
     await page.getByLabel('Project name').fill('Browser Media');
     await page.getByRole('button', { name: 'Create project' }).click();
-    await page.getByLabel('Narration WAV').setInputFiles({
+    await page.getByLabel('Narration file').setInputFiles({
       buffer: await readFile(audioPath),
       mimeType: 'audio/wav',
       name: 'narration.wav',

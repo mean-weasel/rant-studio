@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -7,6 +15,7 @@ import test from 'node:test';
 import { RantApiError, RantClient } from '../../packages/api/src/index.ts';
 import type {
   TranscriptProvider,
+  TranscriptProviderInput,
   TranscriptProviderResult,
 } from '../../packages/transcription/src/index.ts';
 import { openProjectStore } from '../../apps/service/src/store.ts';
@@ -19,6 +28,37 @@ const wavBytes = Buffer.concat([
   Buffer.alloc(32),
 ]);
 
+function createMedia(path: string, kind: 'mp3' | 'mp4' | 'video-only'): void {
+  const audioInput = [
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=520:duration=0.4:sample_rate=48000',
+  ];
+  const args =
+    kind === 'mp3'
+      ? [...audioInput, '-c:a', 'libmp3lame', path]
+      : [
+          '-f',
+          'lavfi',
+          '-i',
+          'color=c=blue:s=64x64:d=0.4',
+          ...(kind === 'mp4' ? audioInput : []),
+          '-t',
+          '0.4',
+          '-c:v',
+          'mpeg4',
+          ...(kind === 'mp4' ? ['-c:a', 'aac'] : []),
+          path,
+        ];
+  const result = spawnSync(
+    'ffmpeg',
+    ['-hide_banner', '-loglevel', 'error', '-y', ...args],
+    { encoding: 'utf8' },
+  );
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
 async function temporaryWorkspace() {
   const root = await mkdtemp(join(tmpdir(), 'rant-studio-intake-'));
   return {
@@ -27,6 +67,21 @@ async function temporaryWorkspace() {
     managedRoot: join(root, 'managed'),
     root,
   };
+}
+
+class CapturingProvider implements TranscriptProvider {
+  readonly name = 'capture-fixture';
+  readonly inputs: TranscriptProviderInput[] = [];
+
+  async transcribe(
+    input: TranscriptProviderInput,
+  ): Promise<TranscriptProviderResult> {
+    this.inputs.push(input);
+    return {
+      raw: { provider: this.name },
+      words: [{ endMs: 400, startMs: 0, text: 'Captured' }],
+    };
+  }
 }
 
 class SequenceProvider implements TranscriptProvider {
@@ -51,6 +106,96 @@ class SequenceProvider implements TranscriptProvider {
     };
   }
 }
+
+test('intake preserves MP3 and MP4 sources while normalizing provider and render audio to WAV', async () => {
+  const workspace = await temporaryWorkspace();
+  await mkdir(workspace.importRoot, { recursive: true });
+  const mp3Path = join(workspace.importRoot, 'voice.mp3');
+  const mp4Path = join(workspace.root, 'camera.mp4');
+  createMedia(mp3Path, 'mp3');
+  createMedia(mp4Path, 'mp4');
+  const provider = new CapturingProvider();
+  const store = openProjectStore(workspace.databasePath, {
+    importRoot: workspace.importRoot,
+    managedRoot: workspace.managedRoot,
+  });
+  const credential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
+  const service = await startLocalService({ port: 0, provider, store });
+  const client = new RantClient({
+    baseUrl: service.url,
+    credential: credential.token,
+  });
+
+  const project = await client.createProject('Real media intake');
+  const mp3Bytes = await readFile(mp3Path);
+  const withMp3 = await client.uploadNarration(project.id, {
+    bytesBase64: mp3Bytes.toString('base64'),
+    expectedRevision: project.revision,
+    mimeType: 'audio/mpeg',
+    originalName: 'voice.mp3',
+  });
+  assert.equal(withMp3.sourceAudio?.mimeType, 'audio/mpeg');
+  assert.equal(withMp3.sourceAudio?.normalizedMimeType, 'audio/wav');
+  assert.deepEqual(await readFile(withMp3.sourceAudio!.originalPath), mp3Bytes);
+  assert.equal(
+    (await readFile(withMp3.sourceAudio!.managedPath))
+      .subarray(0, 4)
+      .toString(),
+    'RIFF',
+  );
+
+  const transcribed = await client.runTranscription(project.id, {
+    expectedRevision: withMp3.revision,
+  });
+  assert.equal(transcribed.transcript?.words[0]?.text, 'Captured');
+  assert.deepEqual(provider.inputs, [
+    {
+      checksum: withMp3.sourceAudio?.normalizedChecksum,
+      managedPath: withMp3.sourceAudio?.managedPath,
+      mimeType: 'audio/wav',
+    },
+  ]);
+
+  const mp4Bytes = await readFile(mp4Path);
+  const withMp4 = await client.uploadNarration(project.id, {
+    bytesBase64: mp4Bytes.toString('base64'),
+    expectedRevision: transcribed.revision,
+    mimeType: 'video/mp4',
+    originalName: 'camera.mp4',
+  });
+  assert.equal(withMp4.sourceAudio?.originalName, 'camera.mp4');
+  assert.equal(withMp4.sourceAudio?.mimeType, 'video/mp4');
+  assert.deepEqual(await readFile(withMp4.sourceAudio!.originalPath), mp4Bytes);
+  assert.notEqual(
+    withMp4.sourceAudio?.checksum,
+    withMp4.sourceAudio?.normalizedChecksum,
+  );
+
+  const pathProject = await client.createProject('Path import');
+  const imported = await client.importNarrationPath(pathProject.id, {
+    expectedRevision: pathProject.revision,
+    path: mp3Path,
+  });
+  assert.equal(imported.sourceAudio?.originalName, 'voice.mp3');
+  assert.equal(imported.sourceAudio?.mimeType, 'audio/mpeg');
+  assert.equal(imported.sourceAudio?.normalizedMimeType, 'audio/wav');
+
+  await service.close();
+  store.close();
+
+  const reopened = openProjectStore(workspace.databasePath, {
+    importRoot: workspace.importRoot,
+    managedRoot: workspace.managedRoot,
+  });
+  assert.equal(
+    reopened.getIntakeProject(project.id).sourceAudio?.originalName,
+    'camera.mp4',
+  );
+  reopened.close();
+});
 
 test('intake persists managed audio, raw provider evidence, words, retries, and restart state', async () => {
   const workspace = await temporaryWorkspace();
@@ -170,6 +315,30 @@ test('intake rejects traversal, unsupported bytes, and symlinked local imports n
       error instanceof RantApiError && error.code === 'UNSAFE_PATH',
   );
 
+  await assert.rejects(
+    client.uploadNarration(project.id, {
+      bytesBase64: Buffer.from('not an mp3').toString('base64'),
+      expectedRevision: 1,
+      mimeType: 'audio/mpeg',
+      originalName: 'fake.mp3',
+    }),
+    (error: unknown) =>
+      error instanceof RantApiError && error.code === 'UNSUPPORTED_MEDIA',
+  );
+
+  const videoOnlyPath = join(workspace.root, 'video-only.mp4');
+  createMedia(videoOnlyPath, 'video-only');
+  await assert.rejects(
+    client.uploadNarration(project.id, {
+      bytesBase64: (await readFile(videoOnlyPath)).toString('base64'),
+      expectedRevision: 1,
+      mimeType: 'video/mp4',
+      originalName: 'video-only.mp4',
+    }),
+    (error: unknown) =>
+      error instanceof RantApiError && error.code === 'UNSUPPORTED_MEDIA',
+  );
+
   await writeFile(join(workspace.root, 'outside.wav'), wavBytes);
   await import('node:fs/promises').then(({ mkdir }) =>
     mkdir(workspace.importRoot, { recursive: true }),
@@ -187,6 +356,12 @@ test('intake rejects traversal, unsupported bytes, and symlinked local imports n
       error instanceof RantApiError && error.code === 'UNSAFE_PATH',
   );
   assert.equal((await client.getIntake(project.id)).revision, 1);
+  assert.deepEqual(
+    (await readdir(workspace.managedRoot, { recursive: true })).filter(
+      (entry) => /\.(mp4|partial|wav)$/.test(entry),
+    ),
+    [],
+  );
 
   await service.close();
   store.close();

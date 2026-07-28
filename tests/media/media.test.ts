@@ -72,7 +72,7 @@ async function mediaFixture() {
   const root = await mkdtemp(join(tmpdir(), 'rant-studio-media-'));
   const databasePath = join(root, 'project.db');
   const managedRoot = join(root, 'managed');
-  const narrationPath = join(root, 'narration.wav');
+  const narrationPath = join(root, 'narration.mp4');
   const imagePath = join(root, 'still.png');
   const clipPath = join(root, 'clip.mp4');
   command('ffmpeg', [
@@ -83,17 +83,25 @@ async function mediaFixture() {
     '-f',
     'lavfi',
     '-i',
+    'color=c=black:s=64x64:d=2',
+    '-f',
+    'lavfi',
+    '-i',
     'sine=frequency=440:duration=1:sample_rate=48000',
     '-f',
     'lavfi',
     '-i',
     'sine=frequency=880:duration=1:sample_rate=48000',
     '-filter_complex',
-    '[0:a][1:a]concat=n=2:v=0:a=1[a]',
+    '[1:a][2:a]concat=n=2:v=0:a=1[a]',
+    '-map',
+    '0:v',
     '-map',
     '[a]',
+    '-c:v',
+    'mpeg4',
     '-c:a',
-    'pcm_s16le',
+    'aac',
     narrationPath,
   ]);
   command('ffmpeg', [
@@ -155,8 +163,8 @@ async function mediaFixture() {
   await human.uploadNarration(project.id, {
     bytesBase64: (await readFile(narrationPath)).toString('base64'),
     expectedRevision: 1,
-    mimeType: 'audio/wav',
-    originalName: 'narration.wav',
+    mimeType: 'video/mp4',
+    originalName: 'narration.mp4',
   });
   await human.importTranscript(project.id, {
     expectedRevision: 2,

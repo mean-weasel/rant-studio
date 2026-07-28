@@ -46,6 +46,9 @@ export type IntakeProjectSnapshot = ProjectSnapshot & {
     sizeBytes: number;
     checksum: string;
     managedPath: string;
+    normalizedChecksum: string;
+    normalizedMimeType: 'audio/wav';
+    originalPath: string;
   };
   transcript: null | {
     id: string;

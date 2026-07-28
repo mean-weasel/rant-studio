@@ -38,7 +38,7 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
     await page.getByRole('button', { name: 'Connect' }).click();
     await page.getByLabel('Project name').fill('Production Editorial');
     await page.getByRole('button', { name: 'Create project' }).click();
-    await page.getByLabel('Narration WAV').setInputFiles({
+    await page.getByLabel('Narration file').setInputFiles({
       buffer: Buffer.concat([
         Buffer.from('RIFF'),
         Buffer.alloc(4),

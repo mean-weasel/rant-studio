@@ -59,7 +59,7 @@ async function openScaleLedger(page: Page) {
   await page.getByRole('button', { name: 'Connect' }).click();
   await page.getByLabel('Project name').fill('Fifteen Minute Scale');
   await page.getByRole('button', { name: 'Create project' }).click();
-  await page.getByLabel('Narration WAV').setInputFiles({
+  await page.getByLabel('Narration file').setInputFiles({
     buffer: wav,
     mimeType: 'audio/wav',
     name: 'fifteen-minutes.wav',

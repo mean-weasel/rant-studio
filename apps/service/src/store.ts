@@ -12,7 +12,6 @@ import {
 import {
   basename,
   dirname,
-  extname,
   isAbsolute,
   join,
   relative,
@@ -45,6 +44,16 @@ import type {
   TranscriptProvider,
 } from '../../../packages/transcription/src/index.ts';
 import { applyMigrations } from './migrations.ts';
+import {
+  MediaIntakeError,
+  narrationMedia,
+  narrationMimeTypeForPath,
+  persistNarration,
+  removeManagedNarration,
+  visualMedia,
+  type ManagedNarration,
+  type VisualMedia,
+} from './narration.ts';
 
 export type Credential = {
   role: ActorKind;
@@ -74,7 +83,10 @@ type SourceAudioRow = {
   id: string;
   managed_path: string;
   mime_type: string;
+  normalized_checksum: string;
+  normalized_mime_type: 'audio/wav';
   original_name: string;
+  original_path: string;
   size_bytes: number;
 };
 
@@ -206,51 +218,6 @@ function isWithin(root: string, candidate: string): boolean {
   return (
     pathFromRoot === '' ||
     (!pathFromRoot.startsWith('..') && !isAbsolute(pathFromRoot))
-  );
-}
-
-function assertWav(bytes: Buffer, name: string, mimeType: string): void {
-  if (
-    extname(name).toLowerCase() !== '.wav' ||
-    mimeType !== 'audio/wav' ||
-    bytes.length < 12 ||
-    bytes.subarray(0, 4).toString() !== 'RIFF' ||
-    bytes.subarray(8, 12).toString() !== 'WAVE'
-  ) {
-    throw new StoreError(
-      'UNSUPPORTED_MEDIA',
-      'Version one intake supports RIFF/WAVE narration files',
-    );
-  }
-}
-
-function visualMedia(
-  bytes: Buffer,
-  name: string,
-  mimeType: string,
-): { extension: '.mp4' | '.png'; kind: 'image' | 'video' } {
-  const pngSignature = Buffer.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-  ]);
-  if (
-    extname(name).toLowerCase() === '.png' &&
-    mimeType === 'image/png' &&
-    bytes.length >= pngSignature.length &&
-    bytes.subarray(0, pngSignature.length).equals(pngSignature)
-  ) {
-    return { extension: '.png', kind: 'image' };
-  }
-  if (
-    extname(name).toLowerCase() === '.mp4' &&
-    mimeType === 'video/mp4' &&
-    bytes.length >= 12 &&
-    bytes.subarray(4, 8).toString('ascii') === 'ftyp'
-  ) {
-    return { extension: '.mp4', kind: 'video' };
-  }
-  throw new StoreError(
-    'UNSUPPORTED_MEDIA',
-    'Version one visual intake supports PNG images and MP4 video',
   );
 }
 
@@ -440,23 +407,37 @@ export class ProjectStore {
         'Narration filename must not contain a path',
       );
     }
-    assertWav(input.bytes, input.originalName, input.mimeType);
     const id = randomUUID();
-    const checksum = createHash('sha256').update(input.bytes).digest('hex');
     const directory = join(this.#managedRoot, input.projectId, 'source');
-    mkdirSync(directory, { recursive: true });
-    const managedPath = join(directory, `${id}.wav`);
-    const temporaryPath = `${managedPath}.partial`;
-    writeFileSync(temporaryPath, input.bytes, { flag: 'wx' });
-    renameSync(temporaryPath, managedPath);
+    let files: ManagedNarration;
+    try {
+      const media = narrationMedia(
+        input.bytes,
+        input.originalName,
+        input.mimeType,
+      );
+      files = persistNarration({
+        bytes: input.bytes,
+        directory,
+        id,
+        media,
+      });
+    } catch (error) {
+      if (error instanceof MediaIntakeError) {
+        throw new StoreError(error.code, error.message);
+      }
+      throw error;
+    }
     try {
       this.#commitIntakeRevision({
         actor: input.actor,
         expectedRevision: input.expectedRevision,
         operation: 'ingest_narration',
         payload: {
-          checksum,
+          checksum: files.checksum,
           mimeType: input.mimeType,
+          normalizedChecksum: files.normalizedChecksum,
+          normalizedMimeType: files.normalizedMimeType,
           originalName: input.originalName,
           sizeBytes: input.bytes.byteLength,
         },
@@ -466,28 +447,28 @@ export class ProjectStore {
             .prepare(
               `INSERT INTO source_audio
                (id, project_id, managed_path, checksum, duration_ms, created_at,
-                original_name, mime_type, size_bytes)
-               VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+                original_name, mime_type, size_bytes, original_path,
+                normalized_checksum, normalized_mime_type)
+               VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
             )
             .run(
               id,
               input.projectId,
-              managedPath,
-              checksum,
+              files.managedPath,
+              files.checksum,
               now,
               input.originalName,
               input.mimeType,
               input.bytes.byteLength,
+              files.originalPath,
+              files.normalizedChecksum,
+              files.normalizedMimeType,
             );
           return revision;
         },
       });
     } catch (error) {
-      try {
-        unlinkSync(managedPath);
-      } catch {
-        // The database error is the useful failure.
-      }
+      removeManagedNarration(files);
       throw error;
     }
     return this.getIntakeProject(input.projectId);
@@ -526,7 +507,7 @@ export class ProjectStore {
       actor: input.actor,
       bytes,
       expectedRevision: input.expectedRevision,
-      mimeType: 'audio/wav',
+      mimeType: narrationMimeTypeForPath(realSource),
       originalName: basename(realSource),
       projectId: input.projectId,
     });
@@ -594,9 +575,9 @@ export class ProjectStore {
     let result: Awaited<ReturnType<TranscriptProvider['transcribe']>>;
     try {
       result = await input.provider.transcribe({
-        checksum: current.sourceAudio.checksum,
+        checksum: current.sourceAudio.normalizedChecksum,
         managedPath: current.sourceAudio.managedPath,
-        mimeType: current.sourceAudio.mimeType,
+        mimeType: current.sourceAudio.normalizedMimeType,
       });
     } catch (error) {
       const message =
@@ -632,7 +613,8 @@ export class ProjectStore {
     const project = this.getProject(projectId);
     const source = this.#database
       .prepare(
-        `SELECT id, managed_path, checksum, original_name, mime_type, size_bytes
+        `SELECT id, managed_path, checksum, original_name, mime_type, size_bytes,
+                original_path, normalized_checksum, normalized_mime_type
          FROM source_audio WHERE project_id = ?
          ORDER BY created_at DESC, rowid DESC LIMIT 1`,
       )
@@ -680,7 +662,10 @@ export class ProjectStore {
             id: source.id,
             managedPath: source.managed_path,
             mimeType: source.mime_type,
+            normalizedChecksum: source.normalized_checksum,
+            normalizedMimeType: source.normalized_mime_type,
             originalName: source.original_name,
+            originalPath: source.original_path,
             sizeBytes: source.size_bytes,
           }
         : null,
@@ -1840,7 +1825,15 @@ export class ProjectStore {
         'Visual filename must not contain a path',
       );
     }
-    const media = visualMedia(input.bytes, input.originalName, input.mimeType);
+    let media: VisualMedia;
+    try {
+      media = visualMedia(input.bytes, input.originalName, input.mimeType);
+    } catch (error) {
+      if (error instanceof MediaIntakeError) {
+        throw new StoreError(error.code, error.message);
+      }
+      throw error;
+    }
     const currentShotIds = new Set(
       this.#currentLedger(input.projectId).shots.map((shot) => shot.id),
     );
