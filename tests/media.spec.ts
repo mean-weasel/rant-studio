@@ -64,7 +64,9 @@ test('production preview preflight export render rechecks stale authority and pl
       }),
     );
     await page.getByRole('button', { name: 'Import transcript' }).click();
-    const projectId = (await page.locator('.intake-project code').textContent())!;
+    const projectId = (await page
+      .locator('.intake-project code')
+      .textContent())!;
 
     const human = new RantClient({
       baseUrl: service.url,
@@ -99,12 +101,16 @@ test('production preview preflight export render rechecks stale authority and pl
       expectedRevision: editorial.revision,
     });
 
-    await page.getByRole('button', { name: 'Open editorial workspace' }).click();
+    await page
+      .getByRole('button', { name: 'Open editorial workspace' })
+      .click();
     await page
       .getByRole('button', { name: 'Open production Shot Ledger' })
       .click();
     await page.getByRole('button', { name: 'Open preview and export' }).click();
-    await expect(page.getByText('MISSING VISUAL', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('MISSING VISUAL', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('1 incomplete shots')).toBeVisible();
     await page
       .getByRole('button', { name: 'Return to this ledger shot' })
@@ -137,7 +143,9 @@ test('production preview preflight export render rechecks stale authority and pl
       page.getByRole('status').filter({ hasText: 'stale' }),
     ).toBeVisible();
     await expect(
-      page.getByLabel('I authorize unmistakable placeholders for incomplete shots'),
+      page.getByLabel(
+        'I authorize unmistakable placeholders for incomplete shots',
+      ),
     ).not.toBeChecked();
     await page.getByRole('button', { name: 'Recheck revision' }).click();
     await page
@@ -145,7 +153,9 @@ test('production preview preflight export render rechecks stale authority and pl
       .check();
     await page.getByRole('button', { name: 'Render selected formats' }).click();
     await expect(
-      page.getByRole('status').filter({ hasText: 'Render succeeded with 2 artifacts' }),
+      page
+        .getByRole('status')
+        .filter({ hasText: 'Render succeeded with 2 artifacts' }),
     ).toBeVisible({ timeout: 20_000 });
     await expect(page.locator('video.render-preview')).toBeVisible();
     await expect(page.getByLabel('Render jobs')).toContainText(

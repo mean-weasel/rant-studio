@@ -46,14 +46,23 @@ test('CLI help and local errors explain authority, revisions, targets, and recov
     2,
   );
   assert.deepEqual(JSON.parse(output.at(-1)!).error.code, 'MALFORMED_INPUT');
-  assert.match(JSON.parse(output.at(-1)!).error.recovery, /project, revision, and target/);
+  assert.match(
+    JSON.parse(output.at(-1)!).error.recovery,
+    /project, revision, and target/,
+  );
 });
 
 test('CLI reads and writes through the same service revision as the browser client', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'rant-studio-cli-'));
   const store = openProjectStore(join(directory, 'project.db'));
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
-  const agentCredential = store.issueCredential({ role: 'agent', scopes: ['project:read', 'note:add'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
+  const agentCredential = store.issueCredential({
+    role: 'agent',
+    scopes: ['project:read', 'note:add'],
+  });
   const service = await startLocalService({ port: 0, store });
   const browserClient = new RantClient({
     baseUrl: service.url,
@@ -92,8 +101,14 @@ test('CLI reads and writes through the same service revision as the browser clie
 test('CLI intake view reads the browser-visible source and timestamp words', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'rant-studio-cli-intake-'));
   const store = openProjectStore(join(directory, 'project.db'));
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
-  const agentCredential = store.issueCredential({ role: 'agent', scopes: ['project:read'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
+  const agentCredential = store.issueCredential({
+    role: 'agent',
+    scopes: ['project:read'],
+  });
   const service = await startLocalService({ port: 0, store });
   const browserClient = new RantClient({
     baseUrl: service.url,
@@ -129,11 +144,13 @@ test('CLI intake view reads the browser-visible source and timestamp words', asy
   const intake = JSON.parse(output.at(-1)!);
   assert.equal(intake.sourceAudio.originalName, 'narration.wav');
   assert.deepEqual(
-    intake.transcript.words.map((word: { text: string; startMs: number; endMs: number }) => ({
-      endMs: word.endMs,
-      startMs: word.startMs,
-      text: word.text,
-    })),
+    intake.transcript.words.map(
+      (word: { text: string; startMs: number; endMs: number }) => ({
+        endMs: word.endMs,
+        startMs: word.startMs,
+        text: word.text,
+      }),
+    ),
     [{ endMs: 500, startMs: 0, text: 'Shared' }],
   );
 
@@ -144,7 +161,10 @@ test('CLI intake view reads the browser-visible source and timestamp words', asy
 test('CLI agent attaches, claims, and submits a revision-bound shot proposal', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'rant-studio-cli-proposal-'));
   const store = openProjectStore(join(directory, 'project.db'));
-  const humanCredential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const humanCredential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: [
@@ -202,14 +222,7 @@ test('CLI agent attaches, claims, and submits a revision-bound shot proposal', a
   );
   assert.equal(
     await runCli(
-      [
-        'proposal',
-        'submit-chronological',
-        created.id,
-        task.id,
-        '--shots',
-        '1',
-      ],
+      ['proposal', 'submit-chronological', created.id, task.id, '--shots', '1'],
       context,
     ),
     0,

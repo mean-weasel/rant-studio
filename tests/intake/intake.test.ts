@@ -59,7 +59,10 @@ test('intake persists managed audio, raw provider evidence, words, retries, and 
     importRoot: workspace.importRoot,
     managedRoot: workspace.managedRoot,
   });
-  const credential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const credential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const service = await startLocalService({ port: 0, provider, store });
   const client = new RantClient({
     baseUrl: service.url,
@@ -128,7 +131,10 @@ test('intake persists managed audio, raw provider evidence, words, retries, and 
     importRoot: workspace.importRoot,
     managedRoot: workspace.managedRoot,
   });
-  assert.equal(reopened.getIntakeProject(project.id).transcript?.words.length, 2);
+  assert.equal(
+    reopened.getIntakeProject(project.id).transcript?.words.length,
+    2,
+  );
   reopened.close();
 });
 
@@ -138,7 +144,10 @@ test('intake rejects traversal, unsupported bytes, and symlinked local imports n
     importRoot: workspace.importRoot,
     managedRoot: workspace.managedRoot,
   });
-  const credential = store.issueCredential({ role: 'human', scopes: ['project:*'] });
+  const credential = store.issueCredential({
+    role: 'human',
+    scopes: ['project:*'],
+  });
   const service = await startLocalService({
     port: 0,
     provider: new SequenceProvider(),

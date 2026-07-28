@@ -1,6 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
-  copyFileSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -10,7 +9,15 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
+import {
+  basename,
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from 'node:path';
 import Database from 'better-sqlite3';
 
 import {
@@ -23,7 +30,6 @@ import {
   type EditorialProjectSnapshot,
   type IntakeProjectSnapshot,
   type LedgerProjectSnapshot,
-  type LedgerShot,
   type MediaProjectSnapshot,
   type OutputFormat,
   type ProjectEvent,
@@ -171,7 +177,10 @@ function snapshot(row: ProjectRow): ProjectSnapshot {
 
 function assertValidWords(words: ProviderWord[]): void {
   if (!Array.isArray(words) || words.length === 0) {
-    throw new StoreError('INVALID_TRANSCRIPT', 'Transcript must contain timestamped words');
+    throw new StoreError(
+      'INVALID_TRANSCRIPT',
+      'Transcript must contain timestamped words',
+    );
   }
   let previousEnd = 0;
   for (const [ordinal, word] of words.entries()) {
@@ -194,7 +203,10 @@ function assertValidWords(words: ProviderWord[]): void {
 
 function isWithin(root: string, candidate: string): boolean {
   const pathFromRoot = relative(root, candidate);
-  return pathFromRoot === '' || (!pathFromRoot.startsWith('..') && !isAbsolute(pathFromRoot));
+  return (
+    pathFromRoot === '' ||
+    (!pathFromRoot.startsWith('..') && !isAbsolute(pathFromRoot))
+  );
 }
 
 function assertWav(bytes: Buffer, name: string, mimeType: string): void {
@@ -250,7 +262,9 @@ export class ProjectStore {
 
   constructor(databasePath: string, options: StoreOptions = {}) {
     this.#database = new Database(databasePath);
-    this.#managedRoot = resolve(options.managedRoot ?? join(dirname(databasePath), 'media'));
+    this.#managedRoot = resolve(
+      options.managedRoot ?? join(dirname(databasePath), 'media'),
+    );
     this.#importRoot = resolve(options.importRoot ?? dirname(databasePath));
     mkdirSync(this.#managedRoot, { recursive: true });
     mkdirSync(this.#importRoot, { recursive: true });
@@ -278,7 +292,8 @@ export class ProjectStore {
   createProject(input: { actor: Actor; name: string }): ProjectSnapshot {
     assertAuthorized(input.actor, 'create_project');
     const name = input.name.trim();
-    if (!name) throw new StoreError('INVALID_INPUT', 'Project name is required');
+    if (!name)
+      throw new StoreError('INVALID_INPUT', 'Project name is required');
     const id = randomUUID();
     const now = new Date().toISOString();
     this.#database.exec('BEGIN IMMEDIATE');
@@ -294,7 +309,13 @@ export class ProjectStore {
            (project_id, revision, actor_kind, actor_id, operation, payload_json, created_at)
            VALUES (?, 1, ?, ?, 'create_project', ?, ?)`,
         )
-        .run(id, input.actor.kind, input.actor.id, JSON.stringify({ name }), now);
+        .run(
+          id,
+          input.actor.kind,
+          input.actor.id,
+          JSON.stringify({ name }),
+          now,
+        );
       this.#database.exec('COMMIT');
     } catch (error) {
       this.#database.exec('ROLLBACK');
@@ -307,7 +328,8 @@ export class ProjectStore {
     const row = this.#database
       .prepare('SELECT id, name, revision FROM projects WHERE id = ?')
       .get(projectId) as ProjectRow | undefined;
-    if (!row) throw new StoreError('NOT_FOUND', `Project ${projectId} was not found`);
+    if (!row)
+      throw new StoreError('NOT_FOUND', `Project ${projectId} was not found`);
     return snapshot(row);
   }
 
@@ -333,7 +355,10 @@ export class ProjectStore {
         .prepare('SELECT id, name, revision FROM projects WHERE id = ?')
         .get(input.projectId) as ProjectRow | undefined;
       if (!current) {
-        throw new StoreError('NOT_FOUND', `Project ${input.projectId} was not found`);
+        throw new StoreError(
+          'NOT_FOUND',
+          `Project ${input.projectId} was not found`,
+        );
       }
       if (current.revision !== input.expectedRevision) {
         throw new StoreError(
@@ -345,7 +370,9 @@ export class ProjectStore {
       const now = new Date().toISOString();
       const payloadJson = JSON.stringify(input.payload);
       this.#database
-        .prepare('UPDATE projects SET revision = ? WHERE id = ? AND revision = ?')
+        .prepare(
+          'UPDATE projects SET revision = ? WHERE id = ? AND revision = ?',
+        )
         .run(revision, input.projectId, current.revision);
       this.#database
         .prepare(
@@ -408,7 +435,10 @@ export class ProjectStore {
       input.originalName.includes('/') ||
       input.originalName.includes('\\')
     ) {
-      throw new StoreError('UNSAFE_PATH', 'Narration filename must not contain a path');
+      throw new StoreError(
+        'UNSAFE_PATH',
+        'Narration filename must not contain a path',
+      );
     }
     assertWav(input.bytes, input.originalName, input.mimeType);
     const id = randomUUID();
@@ -472,15 +502,24 @@ export class ProjectStore {
     assertAuthorized(input.actor, 'ingest_narration');
     const requestedPath = resolve(input.path);
     if (!isWithin(this.#importRoot, requestedPath)) {
-      throw new StoreError('UNSAFE_PATH', 'Import path is outside the configured import root');
+      throw new StoreError(
+        'UNSAFE_PATH',
+        'Import path is outside the configured import root',
+      );
     }
     if (lstatSync(requestedPath).isSymbolicLink()) {
-      throw new StoreError('UNSAFE_PATH', 'Symbolic-link narration imports are not allowed');
+      throw new StoreError(
+        'UNSAFE_PATH',
+        'Symbolic-link narration imports are not allowed',
+      );
     }
     const realImportRoot = realpathSync(this.#importRoot);
     const realSource = realpathSync(requestedPath);
     if (!isWithin(realImportRoot, realSource)) {
-      throw new StoreError('UNSAFE_PATH', 'Narration import resolves outside its root');
+      throw new StoreError(
+        'UNSAFE_PATH',
+        'Narration import resolves outside its root',
+      );
     }
     const bytes = readFileSync(realSource);
     return this.ingestNarration({
@@ -523,7 +562,10 @@ export class ProjectStore {
       );
     }
     if (!current.sourceAudio) {
-      throw new StoreError('INVALID_INPUT', 'Narration audio is required before transcription');
+      throw new StoreError(
+        'INVALID_INPUT',
+        'Narration audio is required before transcription',
+      );
     }
     const attemptId = randomUUID();
     const jobId = randomUUID();
@@ -557,13 +599,16 @@ export class ProjectStore {
         mimeType: current.sourceAudio.mimeType,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Provider failed';
+      const message =
+        error instanceof Error ? error.message : 'Provider failed';
       this.#database
         .prepare(
           "UPDATE transcription_attempts SET status = 'failed', error_message = ? WHERE id = ?",
         )
         .run(message, attemptId);
-      this.#database.prepare("UPDATE jobs SET status = 'failed' WHERE id = ?").run(jobId);
+      this.#database
+        .prepare("UPDATE jobs SET status = 'failed' WHERE id = ?")
+        .run(jobId);
       this.#database
         .prepare(
           "UPDATE job_attempts SET status = 'failed', detail_json = ? WHERE job_id = ?",
@@ -605,7 +650,9 @@ export class ProjectStore {
             `SELECT id, ordinal, text, start_ms AS startMs, end_ms AS endMs
              FROM transcript_words WHERE transcript_revision_id = ? ORDER BY ordinal`,
           )
-          .all(transcriptRevision.id) as IntakeProjectSnapshot['transcript'] extends {
+          .all(
+            transcriptRevision.id,
+          ) as IntakeProjectSnapshot['transcript'] extends {
           words: infer Words;
         }
           ? Words
@@ -666,18 +713,26 @@ export class ProjectStore {
     }
     const attemptId = input.attemptId ?? randomUUID();
     const transcriptId = randomUUID();
-    const rawDirectory = join(this.#managedRoot, input.projectId, 'transcripts');
+    const rawDirectory = join(
+      this.#managedRoot,
+      input.projectId,
+      'transcripts',
+    );
     mkdirSync(rawDirectory, { recursive: true });
     const rawPath = join(rawDirectory, `${attemptId}.json`);
     const temporaryPath = `${rawPath}.partial`;
-    writeFileSync(temporaryPath, JSON.stringify(input.raw, null, 2), { flag: 'wx' });
+    writeFileSync(temporaryPath, JSON.stringify(input.raw, null, 2), {
+      flag: 'wx',
+    });
     renameSync(temporaryPath, rawPath);
     try {
       this.#commitIntakeRevision({
         actor: input.actor,
         expectedRevision: input.expectedRevision,
         operation:
-          input.provider === 'json-import' ? 'import_transcript' : 'run_transcription',
+          input.provider === 'json-import'
+            ? 'import_transcript'
+            : 'run_transcription',
         payload: {
           attemptId,
           provider: input.provider,
@@ -702,22 +757,27 @@ export class ProjectStore {
               )
               .run(rawPath, attemptId);
           }
-          const transcriptRevision =
-            (
-              this.#database
-                .prepare(
-                  `SELECT COALESCE(MAX(revision), 0) + 1 AS revision
+          const transcriptRevision = (
+            this.#database
+              .prepare(
+                `SELECT COALESCE(MAX(revision), 0) + 1 AS revision
                    FROM transcript_revisions WHERE project_id = ?`,
-                )
-                .get(input.projectId) as { revision: number }
-            ).revision;
+              )
+              .get(input.projectId) as { revision: number }
+          ).revision;
           this.#database
             .prepare(
               `INSERT INTO transcript_revisions
                (id, project_id, attempt_id, revision, created_at)
                VALUES (?, ?, ?, ?, ?)`,
             )
-            .run(transcriptId, input.projectId, attemptId, transcriptRevision, now);
+            .run(
+              transcriptId,
+              input.projectId,
+              attemptId,
+              transcriptRevision,
+              now,
+            );
           const insertWord = this.#database.prepare(
             `INSERT INTO transcript_words
              (id, transcript_revision_id, ordinal, text, start_ms, end_ms)
@@ -766,7 +826,10 @@ export class ProjectStore {
     write: (revision: number, now: string) => number;
   }): ProjectSnapshot {
     if (containsSecretMaterial(input.payload)) {
-      throw new StoreError('SECRET_MATERIAL', 'Credentials cannot enter project history');
+      throw new StoreError(
+        'SECRET_MATERIAL',
+        'Credentials cannot enter project history',
+      );
     }
     this.#database.exec('BEGIN IMMEDIATE');
     let result: ProjectSnapshot;
@@ -775,7 +838,10 @@ export class ProjectStore {
         .prepare('SELECT id, name, revision FROM projects WHERE id = ?')
         .get(input.projectId) as ProjectRow | undefined;
       if (!current) {
-        throw new StoreError('NOT_FOUND', `Project ${input.projectId} was not found`);
+        throw new StoreError(
+          'NOT_FOUND',
+          `Project ${input.projectId} was not found`,
+        );
       }
       if (current.revision !== input.expectedRevision) {
         throw new StoreError(
@@ -787,7 +853,9 @@ export class ProjectStore {
       const now = new Date().toISOString();
       input.write(revision, now);
       this.#database
-        .prepare('UPDATE projects SET revision = ? WHERE id = ? AND revision = ?')
+        .prepare(
+          'UPDATE projects SET revision = ? WHERE id = ? AND revision = ?',
+        )
         .run(revision, input.projectId, current.revision);
       const payloadJson = JSON.stringify(input.payload);
       this.#database
@@ -850,9 +918,14 @@ export class ProjectStore {
     }
     const current = this.#currentEditorialTranscript(input.projectId);
     const words = this.#wordsForTranscript(current.id);
-    const correctedOrdinal = words.findIndex((word) => word.id === input.wordId);
+    const correctedOrdinal = words.findIndex(
+      (word) => word.id === input.wordId,
+    );
     if (correctedOrdinal === -1) {
-      throw new StoreError('INVALID_INPUT', 'Correction word is not in the current transcript');
+      throw new StoreError(
+        'INVALID_INPUT',
+        'Correction word is not in the current transcript',
+      );
     }
     const transcriptId = randomUUID();
     this.#commitIntakeRevision({
@@ -865,15 +938,14 @@ export class ProjectStore {
       },
       projectId: input.projectId,
       write: (_projectRevision, now) => {
-        const revision =
-          (
-            this.#database
-              .prepare(
-                `SELECT COALESCE(MAX(revision), 0) + 1 AS revision
+        const revision = (
+          this.#database
+            .prepare(
+              `SELECT COALESCE(MAX(revision), 0) + 1 AS revision
                  FROM transcript_revisions WHERE project_id = ?`,
-              )
-              .get(input.projectId) as { revision: number }
-          ).revision;
+            )
+            .get(input.projectId) as { revision: number }
+        ).revision;
         this.#database
           .prepare(
             `INSERT INTO transcript_revisions
@@ -968,7 +1040,10 @@ export class ProjectStore {
     projectId: string;
   }): { id: string; status: string } {
     if (input.actor.kind !== 'agent') {
-      throw new StoreError('FORBIDDEN', 'Only an agent credential can attach an agent session');
+      throw new StoreError(
+        'FORBIDDEN',
+        'Only an agent credential can attach an agent session',
+      );
     }
     this.getProject(input.projectId);
     const id = randomUUID();
@@ -997,14 +1072,19 @@ export class ProjectStore {
          WHERE id = ? AND project_id = ? AND status = 'attached'`,
       )
       .get(input.sessionId, input.projectId);
-    if (!session) throw new StoreError('DETACHED_AGENT', 'Attach an agent session first');
+    if (!session)
+      throw new StoreError('DETACHED_AGENT', 'Attach an agent session first');
     const task = this.#database
       .prepare(
         `SELECT id FROM agent_tasks
          WHERE id = ? AND project_id = ? AND status = 'queued'`,
       )
       .get(input.taskId, input.projectId);
-    if (!task) throw new StoreError('TASK_UNAVAILABLE', 'Task is not available to claim');
+    if (!task)
+      throw new StoreError(
+        'TASK_UNAVAILABLE',
+        'Task is not available to claim',
+      );
     const claimId = randomUUID();
     this.#database.exec('BEGIN IMMEDIATE');
     try {
@@ -1054,7 +1134,11 @@ export class ProjectStore {
       .get(input.taskId, input.projectId) as
       | { base_revision: number; constraints_json: string; pacing: string }
       | undefined;
-    if (!task) throw new StoreError('TASK_UNAVAILABLE', 'Claim the task before submitting');
+    if (!task)
+      throw new StoreError(
+        'TASK_UNAVAILABLE',
+        'Claim the task before submitting',
+      );
     const claimed = this.#database
       .prepare(
         `SELECT 1 FROM agent_claims c
@@ -1063,17 +1147,27 @@ export class ProjectStore {
            AND s.credential_hash = ? AND s.status = 'attached'`,
       )
       .get(input.taskId, input.credentialHash);
-    if (!claimed) throw new StoreError('DETACHED_AGENT', 'The submitting agent has no claim');
+    if (!claimed)
+      throw new StoreError(
+        'DETACHED_AGENT',
+        'The submitting agent has no claim',
+      );
     const current = this.#currentEditorialTranscript(input.projectId);
     const words = this.#wordsForTranscript(current.id);
     if (
       task.base_revision !== input.baseProjectRevision ||
       current.id !== input.baseTranscriptRevisionId
     ) {
-      throw new StoreError('STALE_PROPOSAL', 'Proposal base revision is no longer current');
+      throw new StoreError(
+        'STALE_PROPOSAL',
+        'Proposal base revision is no longer current',
+      );
     }
     if (input.shots.length === 0) {
-      throw new StoreError('INVALID_PROPOSAL', 'Proposal must contain at least one shot');
+      throw new StoreError(
+        'INVALID_PROPOSAL',
+        'Proposal must contain at least one shot',
+      );
     }
     let expectedStart = 0;
     for (const [index, shot] of input.shots.entries()) {
@@ -1093,7 +1187,10 @@ export class ProjectStore {
       expectedStart = shot.endWordOrdinal + 1;
     }
     if (expectedStart !== words.length) {
-      throw new StoreError('INVALID_PROPOSAL', 'Proposal does not cover every transcript word');
+      throw new StoreError(
+        'INVALID_PROPOSAL',
+        'Proposal does not cover every transcript word',
+      );
     }
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -1160,7 +1257,10 @@ export class ProjectStore {
       this.#database
         .prepare("UPDATE editorial_proposals SET status = 'stale' WHERE id = ?")
         .run(input.proposalId);
-      throw new StoreError('STALE_PROPOSAL', 'Proposal must be regenerated from current state');
+      throw new StoreError(
+        'STALE_PROPOSAL',
+        'Proposal must be regenerated from current state',
+      );
     }
     const operations = this.#database
       .prepare(
@@ -1220,12 +1320,7 @@ export class ProjectStore {
             now,
             shot.rationale,
           );
-          insertSpan.run(
-            randomUUID(),
-            shotId,
-            firstWordId,
-            lastWordId,
-          );
+          insertSpan.run(randomUUID(), shotId, firstWordId, lastWordId);
           insertVersion.run(
             sequenceId,
             shotId,
@@ -1237,7 +1332,9 @@ export class ProjectStore {
           );
         });
         this.#database
-          .prepare("UPDATE editorial_proposals SET status = 'accepted' WHERE id = ?")
+          .prepare(
+            "UPDATE editorial_proposals SET status = 'accepted' WHERE id = ?",
+          )
           .run(input.proposalId);
         this.#database
           .prepare("UPDATE agent_tasks SET status = 'succeeded' WHERE id = ?")
@@ -1280,9 +1377,14 @@ export class ProjectStore {
     assertAuthorized(input.actor, 'adjust_proposal');
     const proposal = this.#proposal(input.projectId, input.proposalId);
     if (proposal.status !== 'ready') {
-      throw new StoreError('STALE_PROPOSAL', 'Only a ready proposal can be adjusted');
+      throw new StoreError(
+        'STALE_PROPOSAL',
+        'Only a ready proposal can be adjusted',
+      );
     }
-    const words = this.#wordsForTranscript(proposal.base_transcript_revision_id);
+    const words = this.#wordsForTranscript(
+      proposal.base_transcript_revision_id,
+    );
     this.#assertExactShotCoverage(input.shots, words.length);
     this.#database.exec('BEGIN IMMEDIATE');
     try {
@@ -1295,7 +1397,12 @@ export class ProjectStore {
          VALUES (?, ?, ?, 'create_shot', ?)`,
       );
       input.shots.forEach((shot, ordinal) =>
-        insert.run(randomUUID(), input.proposalId, ordinal, JSON.stringify(shot)),
+        insert.run(
+          randomUUID(),
+          input.proposalId,
+          ordinal,
+          JSON.stringify(shot),
+        ),
       );
       this.#database.exec('COMMIT');
     } catch (error) {
@@ -1313,13 +1420,18 @@ export class ProjectStore {
     assertAuthorized(input.actor, 'reject_proposal');
     const proposal = this.#proposal(input.projectId, input.proposalId);
     if (proposal.status !== 'ready') {
-      throw new StoreError('STALE_PROPOSAL', 'Only a ready proposal can be rejected');
+      throw new StoreError(
+        'STALE_PROPOSAL',
+        'Only a ready proposal can be rejected',
+      );
     }
     const now = new Date().toISOString();
     this.#database.exec('BEGIN IMMEDIATE');
     try {
       this.#database
-        .prepare("UPDATE editorial_proposals SET status = 'rejected' WHERE id = ?")
+        .prepare(
+          "UPDATE editorial_proposals SET status = 'rejected' WHERE id = ?",
+        )
         .run(input.proposalId);
       this.#database
         .prepare("UPDATE agent_tasks SET status = 'canceled' WHERE id = ?")
@@ -1347,7 +1459,10 @@ export class ProjectStore {
     shotIds: string[];
   }): ActivitySnapshot['tasks'][number] {
     if (input.actor.kind !== 'human') {
-      throw new StoreError('FORBIDDEN', 'Only a human can dispatch an asset task');
+      throw new StoreError(
+        'FORBIDDEN',
+        'Only a human can dispatch an asset task',
+      );
     }
     const project = this.getProject(input.projectId);
     if (project.revision !== input.expectedRevision) {
@@ -1361,10 +1476,14 @@ export class ProjectStore {
       new Set(input.shotIds).size !== input.shotIds.length ||
       input.shotIds.some((id) => !currentShotIds.has(id))
     ) {
-      throw new StoreError('INVALID_INPUT', 'Task targets must be unique current shots');
+      throw new StoreError(
+        'INVALID_INPUT',
+        'Task targets must be unique current shots',
+      );
     }
     const instruction = input.instruction.trim();
-    if (!instruction) throw new StoreError('INVALID_INPUT', 'Task instruction is required');
+    if (!instruction)
+      throw new StoreError('INVALID_INPUT', 'Task instruction is required');
     const id = randomUUID();
     const now = new Date().toISOString();
     this.#database
@@ -1414,10 +1533,14 @@ export class ProjectStore {
            AND status = 'attached'`,
       )
       .get(input.sessionId, input.projectId, input.credentialHash);
-    if (!session) throw new StoreError('DETACHED_AGENT', 'Attach this agent first');
+    if (!session)
+      throw new StoreError('DETACHED_AGENT', 'Attach this agent first');
     const task = this.#task(input.projectId, input.taskId);
     if (task.status !== 'queued') {
-      throw new StoreError('TASK_UNAVAILABLE', 'Task is already claimed or terminal');
+      throw new StoreError(
+        'TASK_UNAVAILABLE',
+        'Task is already claimed or terminal',
+      );
     }
     const now = new Date().toISOString();
     this.#database.exec('BEGIN IMMEDIATE');
@@ -1456,7 +1579,10 @@ export class ProjectStore {
     taskId: string;
   }): { expiresAt: string; status: AgentTaskStatus } {
     if (input.actor.kind !== 'agent') {
-      throw new StoreError('FORBIDDEN', 'Only the claiming agent can heartbeat');
+      throw new StoreError(
+        'FORBIDDEN',
+        'Only the claiming agent can heartbeat',
+      );
     }
     const task = this.#task(input.projectId, input.taskId);
     if (!['claimed', 'running', 'waiting'].includes(task.status)) {
@@ -1499,7 +1625,10 @@ export class ProjectStore {
     }
     const prior = this.#task(input.projectId, input.taskId);
     if (!['failed', 'canceled'].includes(prior.status)) {
-      throw new StoreError('INVALID_TASK_TRANSITION', 'Only failed or canceled tasks can retry');
+      throw new StoreError(
+        'INVALID_TASK_TRANSITION',
+        'Only failed or canceled tasks can retry',
+      );
     }
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -1556,7 +1685,10 @@ export class ProjectStore {
     const task = this.#task(input.projectId, input.taskId);
     const project = this.getProject(input.projectId);
     if (project.revision !== input.expectedProjectRevision) {
-      throw new StoreError('REVISION_CONFLICT', 'Task transition revision is stale');
+      throw new StoreError(
+        'REVISION_CONFLICT',
+        'Task transition revision is stale',
+      );
     }
     const allowedRevision = task.result_revision ?? task.base_revision;
     if (input.expectedProjectRevision !== allowedRevision) {
@@ -1574,9 +1706,13 @@ export class ProjectStore {
              AND s.credential_hash = ? AND s.status = 'attached'`,
         )
         .get(input.taskId, input.credentialHash);
-      if (!ownedClaim) throw new StoreError('DETACHED_AGENT', 'Agent does not own this claim');
+      if (!ownedClaim)
+        throw new StoreError('DETACHED_AGENT', 'Agent does not own this claim');
     } else if (input.status !== 'canceled') {
-      throw new StoreError('FORBIDDEN', 'Humans may cancel tasks but not complete agent work');
+      throw new StoreError(
+        'FORBIDDEN',
+        'Humans may cancel tasks but not complete agent work',
+      );
     }
     const transitions: Record<AgentTaskStatus, AgentTaskStatus[]> = {
       canceled: [],
@@ -1599,11 +1735,14 @@ export class ProjectStore {
     this.#database.exec('BEGIN IMMEDIATE');
     try {
       this.#database
-        .prepare('UPDATE agent_tasks SET status = ?, updated_at = ? WHERE id = ?')
+        .prepare(
+          'UPDATE agent_tasks SET status = ?, updated_at = ? WHERE id = ?',
+        )
         .run(input.status, now, input.taskId);
       if (terminal) {
         const id = randomUUID();
-        const summary = input.summary?.trim() || `${input.status} without summary`;
+        const summary =
+          input.summary?.trim() || `${input.status} without summary`;
         this.#database
           .prepare(
             `INSERT INTO task_receipts
@@ -1659,7 +1798,11 @@ export class ProjectStore {
            AND (? IS NULL OR status = ?)
          ORDER BY created_at DESC, rowid DESC`,
       )
-      .all(projectId, filter.status ?? null, filter.status ?? null) as AgentTaskRow[];
+      .all(
+        projectId,
+        filter.status ?? null,
+        filter.status ?? null,
+      ) as AgentTaskRow[];
     const receipts = this.#database
       .prepare(
         `SELECT r.id, r.task_id, r.result, r.summary, r.project_revision
@@ -1692,7 +1835,10 @@ export class ProjectStore {
       input.originalName.includes('/') ||
       input.originalName.includes('\\')
     ) {
-      throw new StoreError('UNSAFE_PATH', 'Visual filename must not contain a path');
+      throw new StoreError(
+        'UNSAFE_PATH',
+        'Visual filename must not contain a path',
+      );
     }
     const media = visualMedia(input.bytes, input.originalName, input.mimeType);
     const currentShotIds = new Set(
@@ -1703,7 +1849,10 @@ export class ProjectStore {
       new Set(input.shotIds).size !== input.shotIds.length ||
       input.shotIds.some((id) => !currentShotIds.has(id))
     ) {
-      throw new StoreError('INVALID_INPUT', 'Every target must be a unique current shot');
+      throw new StoreError(
+        'INVALID_INPUT',
+        'Every target must be a unique current shot',
+      );
     }
     let task: AgentTaskRow | undefined;
     if (input.taskId) {
@@ -1714,7 +1863,10 @@ export class ProjectStore {
         !['claimed', 'running', 'waiting'].includes(task.status) ||
         task.base_revision !== input.expectedRevision
       ) {
-        throw new StoreError('STALE_TASK', 'Asset task is not current and active');
+        throw new StoreError(
+          'STALE_TASK',
+          'Asset task is not current and active',
+        );
       }
       const ownedClaim = this.#database
         .prepare(
@@ -1724,9 +1876,14 @@ export class ProjectStore {
              AND s.credential_hash = ?`,
         )
         .get(input.taskId, input.credentialHash ?? '');
-      const taskTargets = new Set(JSON.parse(task.target_shot_ids_json) as string[]);
+      const taskTargets = new Set(
+        JSON.parse(task.target_shot_ids_json) as string[],
+      );
       if (!ownedClaim || input.shotIds.some((id) => !taskTargets.has(id))) {
-        throw new StoreError('FORBIDDEN', 'Agent does not own this task or its targets');
+        throw new StoreError(
+          'FORBIDDEN',
+          'Agent does not own this task or its targets',
+        );
       }
     }
     const checksum = createHash('sha256').update(input.bytes).digest('hex');
@@ -1737,13 +1894,13 @@ export class ProjectStore {
          WHERE a.project_id = ? AND f.checksum = ? LIMIT 1`,
       )
       .get(input.projectId, checksum) as
-      | { id: string; managed_path: string }
-      | undefined;
+      { id: string; managed_path: string } | undefined;
     const assetId = existing?.id ?? randomUUID();
     const directory = join(this.#managedRoot, input.projectId, 'assets');
     mkdirSync(directory, { recursive: true });
     const managedPath =
-      existing?.managed_path ?? join(directory, `${checksum}${media.extension}`);
+      existing?.managed_path ??
+      join(directory, `${checksum}${media.extension}`);
     let wroteFile = false;
     if (!existing) {
       const temporaryPath = `${managedPath}.${randomUUID()}.partial`;
@@ -1772,7 +1929,14 @@ export class ProjectStore {
                  (id, asset_id, managed_path, checksum, mime_type, created_at)
                  VALUES (?, ?, ?, ?, ?, ?)`,
               )
-              .run(randomUUID(), assetId, managedPath, checksum, input.mimeType, now);
+              .run(
+                randomUUID(),
+                assetId,
+                managedPath,
+                checksum,
+                input.mimeType,
+                now,
+              );
             this.#database
               .prepare(
                 `INSERT INTO asset_provenance
@@ -1834,7 +1998,10 @@ export class ProjectStore {
       )
       .get(input.shotId, input.assetId);
     if (!candidate) {
-      throw new StoreError('INVALID_INPUT', 'The asset is not a candidate for this shot');
+      throw new StoreError(
+        'INVALID_INPUT',
+        'The asset is not a candidate for this shot',
+      );
     }
     this.#commitIntakeRevision({
       actor: input.actor,
@@ -1898,10 +2065,17 @@ export class ProjectStore {
       )
       .get(input.shotId, input.assetId);
     if (!candidate) {
-      throw new StoreError('INVALID_INPUT', 'Only an attached candidate can be recommended');
+      throw new StoreError(
+        'INVALID_INPUT',
+        'Only an attached candidate can be recommended',
+      );
     }
     const reason = input.reason.trim();
-    if (!reason) throw new StoreError('INVALID_INPUT', 'Recommendation reason is required');
+    if (!reason)
+      throw new StoreError(
+        'INVALID_INPUT',
+        'Recommendation reason is required',
+      );
     this.#commitIntakeRevision({
       actor: input.actor,
       expectedRevision: input.expectedRevision,
@@ -1921,13 +2095,7 @@ export class ProjectStore {
              ON CONFLICT(shot_id, asset_id, agent_id)
              DO UPDATE SET reason = excluded.reason, created_at = excluded.created_at`,
           )
-          .run(
-            input.shotId,
-            input.assetId,
-            input.actor.id,
-            reason,
-            now,
-          );
+          .run(input.shotId, input.assetId, input.actor.id, reason, now);
         return 1;
       },
     });
@@ -2015,7 +2183,10 @@ export class ProjectStore {
     shotId: string;
   }): MediaProjectSnapshot {
     if (input.actor.kind !== 'human') {
-      throw new StoreError('FORBIDDEN', 'Only a human can change output settings');
+      throw new StoreError(
+        'FORBIDDEN',
+        'Only a human can change output settings',
+      );
     }
     if (!['landscape', 'vertical'].includes(input.format)) {
       throw new StoreError('INVALID_INPUT', 'Unknown output format');
@@ -2060,9 +2231,7 @@ export class ProjectStore {
     return this.getMediaProject(input.projectId);
   }
 
-  getPreflight(
-    projectId: string,
-  ): MediaProjectSnapshot['preflight'] {
+  getPreflight(projectId: string): MediaProjectSnapshot['preflight'] {
     const plan = this.#renderPlan(projectId);
     const blockers: string[] = [];
     const warnings: string[] = [];
@@ -2070,7 +2239,8 @@ export class ProjectStore {
     if (!plan.sourceAudioPath || !existsSync(plan.sourceAudioPath)) {
       blockers.push('Narration audio is missing or unreadable.');
     }
-    if (plan.shots.length === 0) blockers.push('The edit has no accepted shots.');
+    if (plan.shots.length === 0)
+      blockers.push('The edit has no accepted shots.');
     for (const shot of plan.shots) {
       if (shot.endMs <= shot.startMs) {
         blockers.push(`Shot ${shot.id} has an invalid source range.`);
@@ -2167,7 +2337,10 @@ export class ProjectStore {
       formats.length === 0 ||
       formats.some((format) => !['landscape', 'vertical'].includes(format))
     ) {
-      throw new StoreError('INVALID_INPUT', 'Choose at least one valid output format');
+      throw new StoreError(
+        'INVALID_INPUT',
+        'Choose at least one valid output format',
+      );
     }
     const preflight = this.getPreflight(input.projectId);
     if (preflight.blockers.length) {
@@ -2203,7 +2376,10 @@ export class ProjectStore {
     return this.#renderJob(input.projectId, id);
   }
 
-  beginRenderJob(projectId: string, jobId: string): {
+  beginRenderJob(
+    projectId: string,
+    jobId: string,
+  ): {
     formats: OutputFormat[];
     plan: RenderPlan;
   } {
@@ -2221,9 +2397,13 @@ export class ProjectStore {
       | undefined;
     if (!row) throw new StoreError('NOT_FOUND', 'Render job was not found');
     if (!['queued', 'waiting'].includes(row.status)) {
-      throw new StoreError('INVALID_TASK_TRANSITION', 'Render job is not runnable');
+      throw new StoreError(
+        'INVALID_TASK_TRANSITION',
+        'Render job is not runnable',
+      );
     }
-    if (!row.plan_json) throw new StoreError('INVALID_INPUT', 'Render plan is missing');
+    if (!row.plan_json)
+      throw new StoreError('INVALID_INPUT', 'Render plan is missing');
     const now = new Date().toISOString();
     this.#database
       .prepare(
@@ -2251,7 +2431,10 @@ export class ProjectStore {
   ): RenderJobSnapshot {
     const job = this.#renderJob(projectId, jobId);
     if (job.status !== 'running') {
-      throw new StoreError('INVALID_TASK_TRANSITION', 'Render job is not running');
+      throw new StoreError(
+        'INVALID_TASK_TRANSITION',
+        'Render job is not running',
+      );
     }
     const now = new Date().toISOString();
     this.#database.exec('BEGIN IMMEDIATE');
@@ -2294,7 +2477,11 @@ export class ProjectStore {
     return this.#renderJob(projectId, jobId);
   }
 
-  failRenderJob(projectId: string, jobId: string, message: string): RenderJobSnapshot {
+  failRenderJob(
+    projectId: string,
+    jobId: string,
+    message: string,
+  ): RenderJobSnapshot {
     const now = new Date().toISOString();
     this.#database
       .prepare(
@@ -2320,7 +2507,10 @@ export class ProjectStore {
     }
     const job = this.#renderJob(input.projectId, input.jobId);
     if (!['queued', 'waiting'].includes(job.status)) {
-      throw new StoreError('INVALID_TASK_TRANSITION', 'Only queued or waiting renders can cancel');
+      throw new StoreError(
+        'INVALID_TASK_TRANSITION',
+        'Only queued or waiting renders can cancel',
+      );
     }
     const now = new Date().toISOString();
     this.#database
@@ -2374,7 +2564,10 @@ export class ProjectStore {
       | undefined;
     if (!prior) throw new StoreError('NOT_FOUND', 'Render job was not found');
     if (!['failed', 'canceled', 'waiting'].includes(prior.status)) {
-      throw new StoreError('INVALID_TASK_TRANSITION', 'Render job cannot be retried');
+      throw new StoreError(
+        'INVALID_TASK_TRANSITION',
+        'Render job cannot be retried',
+      );
     }
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -2412,11 +2605,14 @@ export class ProjectStore {
          WHERE a.id = ? AND j.project_id = ?`,
       )
       .get(artifactId, projectId) as
-      | { checksum: string; published_path: string }
-      | undefined;
-    if (!row) throw new StoreError('NOT_FOUND', 'Render artifact was not found');
+      { checksum: string; published_path: string } | undefined;
+    if (!row)
+      throw new StoreError('NOT_FOUND', 'Render artifact was not found');
     if (!isWithin(this.#managedRoot, resolve(row.published_path))) {
-      throw new StoreError('UNSAFE_PATH', 'Artifact path escaped managed media');
+      throw new StoreError(
+        'UNSAFE_PATH',
+        'Artifact path escaped managed media',
+      );
     }
     return { checksum: row.checksum, path: row.published_path };
   }
@@ -2466,8 +2662,7 @@ export class ProjectStore {
              WHERE s.shot_id = ?`,
           )
           .get(shot.id) as
-          | { kind: 'image' | 'video'; managed_path: string }
-          | undefined;
+          { kind: 'image' | 'video'; managed_path: string } | undefined;
         const resolved = (format: OutputFormat) => {
           const row = overrideRows.find(
             (override) =>
@@ -2599,7 +2794,9 @@ export class ProjectStore {
     };
   }
 
-  #activityReceipt(receipt: TaskReceiptRow): ActivitySnapshot['receipts'][number] {
+  #activityReceipt(
+    receipt: TaskReceiptRow,
+  ): ActivitySnapshot['receipts'][number] {
     return {
       id: receipt.id,
       projectRevision: receipt.project_revision,
@@ -2679,9 +2876,14 @@ export class ProjectStore {
         if (
           input.operation.shotIds.length !== next.length ||
           new Set(input.operation.shotIds).size !== next.length ||
-          input.operation.shotIds.some((id) => !next.some((shot) => shot.id === id))
+          input.operation.shotIds.some(
+            (id) => !next.some((shot) => shot.id === id),
+          )
         ) {
-          throw new StoreError('INVALID_INPUT', 'Reorder must include every current shot once');
+          throw new StoreError(
+            'INVALID_INPUT',
+            'Reorder must include every current shot once',
+          );
         }
         const byId = new Map(next.map((shot) => [shot.id, shot]));
         next = input.operation.shotIds.map((id) => ({ ...byId.get(id)! }));
@@ -2690,23 +2892,32 @@ export class ProjectStore {
       case 'cut': {
         const operation = input.operation;
         if (next.length === 1) {
-          throw new StoreError('INVALID_INPUT', 'A ledger must retain at least one shot');
+          throw new StoreError(
+            'INVALID_INPUT',
+            'A ledger must retain at least one shot',
+          );
         }
         const before = next.length;
         next = next.filter((shot) => shot.id !== operation.shotId);
-        if (next.length === before) throw new StoreError('NOT_FOUND', 'Shot was not found');
+        if (next.length === before)
+          throw new StoreError('NOT_FOUND', 'Shot was not found');
         break;
       }
       case 'trim': {
         const operation = input.operation;
-        const shot = next.find((candidate) => candidate.id === operation.shotId);
+        const shot = next.find(
+          (candidate) => candidate.id === operation.shotId,
+        );
         if (
           !shot ||
           operation.startWordOrdinal < shot.startWordOrdinal ||
           operation.endWordOrdinal > shot.endWordOrdinal ||
           operation.endWordOrdinal < operation.startWordOrdinal
         ) {
-          throw new StoreError('INVALID_INPUT', 'Trim range must stay inside the shot');
+          throw new StoreError(
+            'INVALID_INPUT',
+            'Trim range must stay inside the shot',
+          );
         }
         const words = this.#wordsForTranscript(
           this.#currentEditorialTranscript(input.projectId).id,
@@ -2726,7 +2937,10 @@ export class ProjectStore {
           operation.atWordOrdinal <= shot.startWordOrdinal ||
           operation.atWordOrdinal > shot.endWordOrdinal
         ) {
-          throw new StoreError('INVALID_INPUT', 'Split boundary must be inside the shot');
+          throw new StoreError(
+            'INVALID_INPUT',
+            'Split boundary must be inside the shot',
+          );
         }
         const words = this.#wordsForTranscript(
           this.#currentEditorialTranscript(input.projectId).id,
@@ -2828,13 +3042,20 @@ export class ProjectStore {
     this.#currentLedger(input.projectId);
     const id = randomUUID();
     const name = input.name.trim();
-    if (!name) throw new StoreError('INVALID_INPUT', 'Checkpoint name is required');
+    if (!name)
+      throw new StoreError('INVALID_INPUT', 'Checkpoint name is required');
     this.#database
       .prepare(
         `INSERT INTO checkpoints (id, project_id, revision, name, created_at)
          VALUES (?, ?, ?, ?, ?)`,
       )
-      .run(id, input.projectId, project.revision, name, new Date().toISOString());
+      .run(
+        id,
+        input.projectId,
+        project.revision,
+        name,
+        new Date().toISOString(),
+      );
     return { id, name, revision: project.revision };
   }
 
@@ -2849,8 +3070,10 @@ export class ProjectStore {
       .prepare(
         `SELECT revision FROM checkpoints WHERE id = ? AND project_id = ?`,
       )
-      .get(input.checkpointId, input.projectId) as { revision: number } | undefined;
-    if (!checkpoint) throw new StoreError('NOT_FOUND', 'Checkpoint was not found');
+      .get(input.checkpointId, input.projectId) as
+      { revision: number } | undefined;
+    if (!checkpoint)
+      throw new StoreError('NOT_FOUND', 'Checkpoint was not found');
     const sequence = this.#database
       .prepare(
         `SELECT id FROM edit_sequences
@@ -2858,7 +3081,8 @@ export class ProjectStore {
          ORDER BY revision DESC LIMIT 1`,
       )
       .get(input.projectId, checkpoint.revision) as { id: string } | undefined;
-    if (!sequence) throw new StoreError('NOT_FOUND', 'Checkpoint has no ledger state');
+    if (!sequence)
+      throw new StoreError('NOT_FOUND', 'Checkpoint has no ledger state');
     return this.#restoreLedgerSequence({
       actor: input.actor,
       expectedRevision: input.expectedRevision,
@@ -2880,7 +3104,8 @@ export class ProjectStore {
          ORDER BY revision DESC LIMIT 2`,
       )
       .all(input.projectId) as Array<{ id: string }>;
-    if (sequences.length < 2) throw new StoreError('INVALID_INPUT', 'Nothing to undo');
+    if (sequences.length < 2)
+      throw new StoreError('INVALID_INPUT', 'Nothing to undo');
     return this.#restoreLedgerSequence({
       actor: input.actor,
       expectedRevision: input.expectedRevision,
@@ -2949,7 +3174,8 @@ export class ProjectStore {
          ORDER BY revision DESC LIMIT 1`,
       )
       .get(projectId) as { id: string } | undefined;
-    if (!sequence) throw new StoreError('INVALID_INPUT', 'Accept a shot proposal first');
+    if (!sequence)
+      throw new StoreError('INVALID_INPUT', 'Accept a shot proposal first');
     const shots = this.#database
       .prepare(
         `SELECT v.shot_id AS id, v.ordinal, v.theme, v.rationale,
@@ -3040,7 +3266,11 @@ export class ProjectStore {
            (child_shot_id, parent_shot_id, relation) VALUES (?, ?, ?)`,
         );
         input.ancestry.forEach((edge) =>
-          insertAncestry.run(edge.childShotId, edge.parentShotId, edge.relation),
+          insertAncestry.run(
+            edge.childShotId,
+            edge.parentShotId,
+            edge.relation,
+          ),
         );
         return revision;
       },
@@ -3071,7 +3301,10 @@ export class ProjectStore {
       ancestry: [],
       expectedRevision: input.expectedRevision,
       newEntities: new Set(),
-      operationDetail: { source: input.source, sourceSequenceId: input.sequenceId },
+      operationDetail: {
+        source: input.source,
+        sourceSequenceId: input.sequenceId,
+      },
       projectId: input.projectId,
       shots,
     });
@@ -3145,7 +3378,10 @@ export class ProjectStore {
       proposals: proposals.map((proposal) => ({
         baseProjectRevision: proposal.base_revision,
         baseTranscriptRevisionId: proposal.base_transcript_revision_id,
-        constraints: JSON.parse(proposal.constraints_json) as Record<string, unknown>,
+        constraints: JSON.parse(proposal.constraints_json) as Record<
+          string,
+          unknown
+        >,
         id: proposal.id,
         pacing: proposal.pacing,
         shots: (
@@ -3155,12 +3391,15 @@ export class ProjectStore {
                WHERE proposal_id = ? ORDER BY ordinal`,
             )
             .all(proposal.id) as Array<{ payload_json: string }>
-        ).map(({ payload_json }) => JSON.parse(payload_json) as {
-          endWordOrdinal: number;
-          rationale: string;
-          startWordOrdinal: number;
-          theme: string;
-        }),
+        ).map(
+          ({ payload_json }) =>
+            JSON.parse(payload_json) as {
+              endWordOrdinal: number;
+              rationale: string;
+              startWordOrdinal: number;
+              theme: string;
+            },
+        ),
         status: proposal.status,
         taskId: proposal.task_id,
       })),
@@ -3186,7 +3425,8 @@ export class ProjectStore {
          WHERE project_id = ? ORDER BY revision DESC LIMIT 1`,
       )
       .get(projectId) as EditorialTranscriptRow | undefined;
-    if (!current) throw new StoreError('INVALID_INPUT', 'A transcript is required');
+    if (!current)
+      throw new StoreError('INVALID_INPUT', 'A transcript is required');
     return current;
   }
 
@@ -3198,7 +3438,9 @@ export class ProjectStore {
         `SELECT id, ordinal, text, start_ms AS startMs, end_ms AS endMs
          FROM transcript_words WHERE transcript_revision_id = ? ORDER BY ordinal`,
       )
-      .all(transcriptId) as EditorialProjectSnapshot['effectiveTranscript']['words'];
+      .all(
+        transcriptId,
+      ) as EditorialProjectSnapshot['effectiveTranscript']['words'];
   }
 
   #proposal(projectId: string, proposalId: string): ProposalRow {
@@ -3223,7 +3465,10 @@ export class ProjectStore {
     wordCount: number,
   ): void {
     if (shots.length === 0) {
-      throw new StoreError('INVALID_PROPOSAL', 'Proposal must contain at least one shot');
+      throw new StoreError(
+        'INVALID_PROPOSAL',
+        'Proposal must contain at least one shot',
+      );
     }
     let expectedStart = 0;
     for (const [index, shot] of shots.entries()) {
@@ -3243,7 +3488,10 @@ export class ProjectStore {
       expectedStart = shot.endWordOrdinal + 1;
     }
     if (expectedStart !== wordCount) {
-      throw new StoreError('INVALID_PROPOSAL', 'Proposal does not cover every transcript word');
+      throw new StoreError(
+        'INVALID_PROPOSAL',
+        'Proposal does not cover every transcript word',
+      );
     }
   }
 
@@ -3294,7 +3542,8 @@ export class ProjectStore {
     const result = this.#database
       .prepare('UPDATE credentials SET revoked_at = ? WHERE token_hash = ?')
       .run(new Date().toISOString(), hashToken(token));
-    if (result.changes === 0) throw new StoreError('NOT_FOUND', 'Credential not found');
+    if (result.changes === 0)
+      throw new StoreError('NOT_FOUND', 'Credential not found');
   }
 }
 

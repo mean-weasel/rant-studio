@@ -4,9 +4,7 @@ import { resolve } from 'node:path';
 import { openProjectStore } from './store.ts';
 import { startLocalService } from './server.ts';
 
-const dataRoot = resolve(
-  process.env.RANT_STUDIO_DATA_DIR ?? '.rant-studio',
-);
+const dataRoot = resolve(process.env.RANT_STUDIO_DATA_DIR ?? '.rant-studio');
 const importRoot = resolve(
   process.env.RANT_STUDIO_IMPORT_ROOT ?? process.cwd(),
 );

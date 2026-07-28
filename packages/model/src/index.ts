@@ -180,12 +180,7 @@ export type ActivitySnapshot = ProjectSnapshot & {
 export type OutputFormat = 'landscape' | 'vertical';
 export type VisualFit = 'cover' | 'contain';
 export type RenderJobStatus =
-  | 'queued'
-  | 'running'
-  | 'waiting'
-  | 'failed'
-  | 'canceled'
-  | 'succeeded';
+  'queued' | 'running' | 'waiting' | 'failed' | 'canceled' | 'succeeded';
 
 export type FormatOverride = {
   captionsEnabled: boolean;
@@ -297,7 +292,10 @@ export class AuthorityError extends Error {
   }
 }
 
-export function assertAuthorized(actor: Actor, operation: ProjectOperation): void {
+export function assertAuthorized(
+  actor: Actor,
+  operation: ProjectOperation,
+): void {
   const permitted = actor.kind === 'human' ? humanOperations : agentOperations;
   if (!permitted.has(operation)) throw new AuthorityError(actor, operation);
 }

@@ -73,7 +73,9 @@ export class RantClient {
   }
 
   async getIntake(projectId: string): Promise<IntakeProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/intake`);
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/intake`,
+    );
   }
 
   async uploadNarration(
@@ -85,20 +87,26 @@ export class RantClient {
       originalName: string;
     },
   ): Promise<IntakeProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/audio`, {
-      body: JSON.stringify(input),
-      method: 'POST',
-    });
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/audio`,
+      {
+        body: JSON.stringify(input),
+        method: 'POST',
+      },
+    );
   }
 
   async importNarrationPath(
     projectId: string,
     input: { expectedRevision: number; path: string },
   ): Promise<IntakeProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/audio-path`, {
-      body: JSON.stringify(input),
-      method: 'POST',
-    });
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/audio-path`,
+      {
+        body: JSON.stringify(input),
+        method: 'POST',
+      },
+    );
   }
 
   async importTranscript(
@@ -132,7 +140,9 @@ export class RantClient {
   }
 
   async getEditorial(projectId: string): Promise<EditorialProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/editorial`);
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/editorial`,
+    );
   }
 
   async correctTranscript(
@@ -143,10 +153,13 @@ export class RantClient {
       wordId: string;
     },
   ): Promise<EditorialProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/corrections`, {
-      body: JSON.stringify(input),
-      method: 'POST',
-    });
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/corrections`,
+      {
+        body: JSON.stringify(input),
+        method: 'POST',
+      },
+    );
   }
 
   async createProposalTask(
@@ -164,7 +177,9 @@ export class RantClient {
     );
   }
 
-  async attachAgent(projectId: string): Promise<{ id: string; status: string }> {
+  async attachAgent(
+    projectId: string,
+  ): Promise<{ id: string; status: string }> {
     return this.#request(
       `/v1/projects/${encodeURIComponent(projectId)}/agent-sessions`,
       { body: '{}', method: 'POST' },
@@ -235,7 +250,9 @@ export class RantClient {
   }
 
   async getLedger(projectId: string): Promise<LedgerProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/ledger`);
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/ledger`,
+    );
   }
 
   async editLedger(
@@ -280,7 +297,9 @@ export class RantClient {
   }
 
   async getAssets(projectId: string): Promise<AssetProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/assets`);
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/assets`,
+    );
   }
 
   async uploadVisualCandidate(
@@ -436,7 +455,10 @@ export class RantClient {
     );
   }
 
-  async getPreviewArtifact(projectId: string, previewId: string): Promise<Blob> {
+  async getPreviewArtifact(
+    projectId: string,
+    previewId: string,
+  ): Promise<Blob> {
     const response = await this.#fetch(
       `${this.#baseUrl}/v1/projects/${encodeURIComponent(projectId)}/previews/${encodeURIComponent(previewId)}`,
       { headers: { authorization: `Bearer ${this.#credential}` } },
@@ -478,7 +500,9 @@ export class RantClient {
         while (!controller.signal.aborted) {
           const { done, value } = await reader.read();
           if (done) break;
-          buffer += decoder.decode(value, { stream: true }).replaceAll('\r\n', '\n');
+          buffer += decoder
+            .decode(value, { stream: true })
+            .replaceAll('\r\n', '\n');
           let boundary = buffer.indexOf('\n\n');
           while (boundary >= 0) {
             const frame = buffer.slice(0, boundary);
@@ -594,10 +618,13 @@ export class RantClient {
     projectId: string,
     mutation: MutationInput,
   ): Promise<ProjectSnapshot> {
-    return this.#request(`/v1/projects/${encodeURIComponent(projectId)}/mutations`, {
-      body: JSON.stringify(mutation),
-      method: 'POST',
-    });
+    return this.#request(
+      `/v1/projects/${encodeURIComponent(projectId)}/mutations`,
+      {
+        body: JSON.stringify(mutation),
+        method: 'POST',
+      },
+    );
   }
 
   async #request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -610,10 +637,10 @@ export class RantClient {
       },
     });
     const payload = (await response.json()) as
-      | T
-      | { error: { code: string; message: string } };
+      T | { error: { code: string; message: string } };
     if (!response.ok) {
-      const error = (payload as { error?: { code?: string; message?: string } }).error;
+      const error = (payload as { error?: { code?: string; message?: string } })
+        .error;
       throw new RantApiError(
         error?.code ?? 'HTTP_ERROR',
         error?.message ?? `Request failed with ${response.status}`,

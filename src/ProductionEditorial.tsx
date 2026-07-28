@@ -11,17 +11,17 @@ type Props = {
   onRevision: (revision: number) => void;
 };
 
-export function ProductionEditorial({
-  client,
-  projectId,
-  onRevision,
-}: Props) {
-  const [editorial, setEditorial] = useState<EditorialProjectSnapshot | null>(null);
+export function ProductionEditorial({ client, projectId, onRevision }: Props) {
+  const [editorial, setEditorial] = useState<EditorialProjectSnapshot | null>(
+    null,
+  );
   const [selectedWord, setSelectedWord] = useState('');
   const [replacement, setReplacement] = useState('');
   const [pacing, setPacing] = useState('Standard');
   const [shotCount, setShotCount] = useState(3);
-  const [status, setStatus] = useState('Load the editorial workspace to begin.');
+  const [status, setStatus] = useState(
+    'Load the editorial workspace to begin.',
+  );
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function ProductionEditorial({
         setSelectedWord((current) =>
           next.effectiveTranscript.words.some((word) => word.id === current)
             ? current
-            : next.effectiveTranscript.words[0]?.id ?? '',
+            : (next.effectiveTranscript.words[0]?.id ?? ''),
         );
         onRevision(next.revision);
       });
@@ -51,7 +51,9 @@ export function ProductionEditorial({
       setStatus(`Editorial revision ${next.revision} loaded.`);
       onRevision(next.revision);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Editorial load failed');
+      setStatus(
+        error instanceof Error ? error.message : 'Editorial load failed',
+      );
     } finally {
       setBusy(false);
     }
@@ -69,7 +71,9 @@ export function ProductionEditorial({
       });
       setEditorial(next);
       setReplacement('');
-      setStatus(`Correction saved at revision ${next.revision}. Raw text preserved.`);
+      setStatus(
+        `Correction saved at revision ${next.revision}. Raw text preserved.`,
+      );
       onRevision(next.revision);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Correction failed');
@@ -93,7 +97,9 @@ export function ProductionEditorial({
         `External task ${task.id} queued. An attached CLI agent must claim and submit it.`,
       );
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Agent proposal failed');
+      setStatus(
+        error instanceof Error ? error.message : 'Agent proposal failed',
+      );
     } finally {
       setBusy(false);
     }
@@ -105,24 +111,33 @@ export function ProductionEditorial({
   ) {
     setBusy(true);
     try {
-      const next = await client.adjustShotProposal(projectId, proposal.id, { shots });
+      const next = await client.adjustShotProposal(projectId, proposal.id, {
+        shots,
+      });
       setEditorial(next);
       setStatus('Shared boundary updated; exact coverage revalidated.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Boundary update failed');
+      setStatus(
+        error instanceof Error ? error.message : 'Boundary update failed',
+      );
     } finally {
       setBusy(false);
     }
   }
 
-  const readyProposal = editorial?.proposals.find((proposal) => proposal.status === 'ready');
+  const readyProposal = editorial?.proposals.find(
+    (proposal) => proposal.status === 'ready',
+  );
 
   if (!editorial) {
     return (
       <section className="intake-card editorial-launch">
         <p className="eyebrow">Next · Human + agent</p>
         <h2>Organize transcript into shots</h2>
-        <p>Corrections and agent proposals stay staged until a human accepts them.</p>
+        <p>
+          Corrections and agent proposals stay staged until a human accepts
+          them.
+        </p>
         <button type="button" disabled={busy} onClick={load}>
           Open editorial workspace
         </button>
@@ -132,10 +147,15 @@ export function ProductionEditorial({
   }
 
   return (
-    <section className="editorial-workspace" aria-labelledby="editorial-heading">
+    <section
+      className="editorial-workspace"
+      aria-labelledby="editorial-heading"
+    >
       <header className="editorial-heading">
         <div>
-          <p className="eyebrow">Revision {editorial.revision} · staged workflow</p>
+          <p className="eyebrow">
+            Revision {editorial.revision} · staged workflow
+          </p>
           <h2 id="editorial-heading">Transcript and shot proposal</h2>
         </div>
         <button type="button" disabled={busy} onClick={load}>
@@ -178,7 +198,8 @@ export function ProductionEditorial({
               >
                 {editorial.effectiveTranscript.words.map((word) => (
                   <option key={word.id} value={word.id}>
-                    {word.ordinal + 1}. {word.text} ({word.startMs}–{word.endMs} ms)
+                    {word.ordinal + 1}. {word.text} ({word.startMs}–{word.endMs}{' '}
+                    ms)
                   </option>
                 ))}
               </select>
@@ -193,9 +214,16 @@ export function ProductionEditorial({
           </div>
           <label>
             Replacement
-            <input value={replacement} onChange={(event) => setReplacement(event.target.value)} />
+            <input
+              value={replacement}
+              onChange={(event) => setReplacement(event.target.value)}
+            />
           </label>
-          <button type="button" disabled={busy || !replacement.trim()} onClick={correct}>
+          <button
+            type="button"
+            disabled={busy || !replacement.trim()}
+            onClick={correct}
+          >
             Save correction
           </button>
         </div>
@@ -212,7 +240,10 @@ export function ProductionEditorial({
           </div>
           <label>
             Pacing
-            <select value={pacing} onChange={(event) => setPacing(event.target.value)}>
+            <select
+              value={pacing}
+              onChange={(event) => setPacing(event.target.value)}
+            >
               <option>Relaxed</option>
               <option>Standard</option>
               <option>Punchy</option>
@@ -229,7 +260,9 @@ export function ProductionEditorial({
             />
           </label>
           <button type="button" disabled={busy} onClick={askAgent}>
-            {editorial.proposals.some((proposal) => proposal.status === 'rejected')
+            {editorial.proposals.some(
+              (proposal) => proposal.status === 'rejected',
+            )
               ? 'Queue regenerated external proposal'
               : 'Queue external shot proposal'}
           </button>
@@ -242,7 +275,8 @@ export function ProductionEditorial({
             <div>
               <p className="eyebrow">Agent result · ready for review</p>
               <h3 id="proposal-heading">
-                {readyProposal.shots.length} chronological shots · {readyProposal.pacing}
+                {readyProposal.shots.length} chronological shots ·{' '}
+                {readyProposal.pacing}
               </h3>
             </div>
             <strong>Human approval required</strong>
@@ -258,7 +292,10 @@ export function ProductionEditorial({
               shot.endWordOrdinal + 1,
             );
             return (
-              <article className="proposal-grid" key={`${readyProposal.id}-${index}`}>
+              <article
+                className="proposal-grid"
+                key={`${readyProposal.id}-${index}`}
+              >
                 <div>
                   <strong>Shot {index + 1}</strong>
                   <small>
@@ -300,9 +337,14 @@ export function ProductionEditorial({
               onClick={async () => {
                 setBusy(true);
                 try {
-                  const next = await client.rejectShotProposal(projectId, readyProposal.id);
+                  const next = await client.rejectShotProposal(
+                    projectId,
+                    readyProposal.id,
+                  );
                   setEditorial(next);
-                  setStatus('Proposal rejected. Accepted shots remain unchanged.');
+                  setStatus(
+                    'Proposal rejected. Accepted shots remain unchanged.',
+                  );
                 } finally {
                   setBusy(false);
                 }
@@ -316,14 +358,22 @@ export function ProductionEditorial({
               onClick={async () => {
                 setBusy(true);
                 try {
-                  const next = await client.acceptShotProposal(projectId, readyProposal.id, {
-                    expectedRevision: editorial.revision,
-                  });
+                  const next = await client.acceptShotProposal(
+                    projectId,
+                    readyProposal.id,
+                    {
+                      expectedRevision: editorial.revision,
+                    },
+                  );
                   setEditorial(next);
                   onRevision(next.revision);
                   setStatus(`Proposal accepted at revision ${next.revision}.`);
                 } catch (error) {
-                  setStatus(error instanceof Error ? error.message : 'Acceptance failed');
+                  setStatus(
+                    error instanceof Error
+                      ? error.message
+                      : 'Acceptance failed',
+                  );
                 } finally {
                   setBusy(false);
                 }

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "apps/cli/src/main.ts",
+    "apps/media-worker/src/index.ts",
+    "apps/service/src/main.ts",
+    "apps/web/src/client.ts",
+    "tests/**/*.test.ts",
+    "tests/**/*.spec.ts",
+    "playwright.config.ts",
+    "vite.config.ts"
+  ],
+  "project": ["{src,apps,packages,tests}/**/*.{ts,tsx}", "*.{js,mjs,ts}"],
+  "ignore": ["docs/**"],
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  }
+}

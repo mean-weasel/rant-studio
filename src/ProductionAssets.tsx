@@ -35,7 +35,9 @@ export function ProductionAssets({
   const [busy, setBusy] = useState(false);
   const [instruction, setInstruction] = useState('');
   const [activity, setActivity] = useState<ActivitySnapshot | null>(null);
-  const [activityFilter, setActivityFilter] = useState<AgentTaskStatus | ''>('');
+  const [activityFilter, setActivityFilter] = useState<AgentTaskStatus | ''>(
+    '',
+  );
 
   useEffect(() => {
     if (!assets) return;
@@ -65,12 +67,16 @@ export function ProductionAssets({
       const next = await client.getAssets(projectId);
       setAssets(next);
       setTargets((current) =>
-        current.length ? current.filter((id) => next.shots.some((shot) => shot.id === id)) : [next.shots[0]?.id ?? ''].filter(Boolean),
+        current.length
+          ? current.filter((id) => next.shots.some((shot) => shot.id === id))
+          : [next.shots[0]?.id ?? ''].filter(Boolean),
       );
       setStatus(`Visual workspace loaded at revision ${next.revision}.`);
       onRevision(next.revision);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Visual workspace failed');
+      setStatus(
+        error instanceof Error ? error.message : 'Visual workspace failed',
+      );
     } finally {
       setBusy(false);
     }
@@ -81,7 +87,10 @@ export function ProductionAssets({
       <section className="intake-card">
         <p className="eyebrow">Visual collaboration</p>
         <h3>Candidate assets</h3>
-        <p>Humans and CLI agents share candidates; only humans select the active visual.</p>
+        <p>
+          Humans and CLI agents share candidates; only humans select the active
+          visual.
+        </p>
         <button type="button" disabled={busy} onClick={load}>
           Open visual workspace
         </button>
@@ -152,7 +161,11 @@ export function ProductionAssets({
               );
               onRevision(next.revision);
             } catch (error) {
-              setStatus(error instanceof Error ? error.message : 'Candidate upload failed');
+              setStatus(
+                error instanceof Error
+                  ? error.message
+                  : 'Candidate upload failed',
+              );
             } finally {
               setBusy(false);
             }
@@ -161,19 +174,28 @@ export function ProductionAssets({
           Upload to selected shots
         </button>
       </div>
-      <section className="agent-command-dock" aria-labelledby="agent-dock-heading">
+      <section
+        className="agent-command-dock"
+        aria-labelledby="agent-dock-heading"
+      >
         <div>
           <p className="eyebrow">External agent command</p>
-          <h4 id="agent-dock-heading">Explicit targets · {targets.length} selected</h4>
+          <h4 id="agent-dock-heading">
+            Explicit targets · {targets.length} selected
+          </h4>
           <p>
-            Dispatch creates durable work for a scoped CLI agent. It does not silently
-            start an embedded model.
+            Dispatch creates durable work for a scoped CLI agent. It does not
+            silently start an embedded model.
           </p>
         </div>
         <div className="target-chips" aria-label="Agent task targets">
           {targets.map((target) => {
             const index = assets.shots.findIndex((shot) => shot.id === target);
-            return <span key={target}>Shot {index + 1} · {target.slice(0, 8)}</span>;
+            return (
+              <span key={target}>
+                Shot {index + 1} · {target.slice(0, 8)}
+              </span>
+            );
           })}
         </div>
         <label>
@@ -196,10 +218,14 @@ export function ProductionAssets({
                 shotIds: targets,
               });
               setInstruction('');
-              setStatus(`Agent task ${task.id.slice(0, 8)} queued for ${targets.length} shots.`);
+              setStatus(
+                `Agent task ${task.id.slice(0, 8)} queued for ${targets.length} shots.`,
+              );
               setActivity(await client.getActivity(projectId));
             } catch (error) {
-              setStatus(error instanceof Error ? error.message : 'Task dispatch failed');
+              setStatus(
+                error instanceof Error ? error.message : 'Task dispatch failed',
+              );
             } finally {
               setBusy(false);
             }
@@ -214,14 +240,19 @@ export function ProductionAssets({
             <header>
               <strong>Shot {index + 1}</strong>
               <span>
-                {shot.candidates.length} candidate{shot.candidates.length === 1 ? '' : 's'}
+                {shot.candidates.length} candidate
+                {shot.candidates.length === 1 ? '' : 's'}
               </span>
               <button
                 type="button"
                 onClick={() => {
                   setTargets([shot.id]);
-                  setInstruction(`Find a visual candidate for Shot ${index + 1}.`);
-                  setStatus(`Shot ${index + 1} targeted; review the instruction before dispatch.`);
+                  setInstruction(
+                    `Find a visual candidate for Shot ${index + 1}.`,
+                  );
+                  setStatus(
+                    `Shot ${index + 1} targeted; review the instruction before dispatch.`,
+                  );
                 }}
               >
                 Ask agent
@@ -238,7 +269,9 @@ export function ProductionAssets({
                         shotId: shot.id,
                       });
                       setAssets(next);
-                      setStatus(`Human cleared the visual for Shot ${index + 1}.`);
+                      setStatus(
+                        `Human cleared the visual for Shot ${index + 1}.`,
+                      );
                       onRevision(next.revision);
                     } finally {
                       setBusy(false);
@@ -251,19 +284,26 @@ export function ProductionAssets({
             </header>
             <div className="candidate-tray" tabIndex={0}>
               {shot.candidates.map((assetId) => {
-                const asset = assets.assets.find((candidate) => candidate.id === assetId);
+                const asset = assets.assets.find(
+                  (candidate) => candidate.id === assetId,
+                );
                 const recommendations = shot.recommendations.filter(
                   (recommendation) => recommendation.assetId === assetId,
                 );
                 return (
-                  <div key={assetId} data-selected={shot.selectedAssetId === assetId}>
+                  <div
+                    key={assetId}
+                    data-selected={shot.selectedAssetId === assetId}
+                  >
                     <strong>{assetId.slice(0, 8)}</strong>
                     <small>
                       {asset?.provenance.actorKind} · {asset?.provenance.origin}
                     </small>
                     <code>{asset?.checksum.slice(0, 12)}…</code>
                     {recommendations.map((recommendation) => (
-                      <em key={`${recommendation.agentId}-${recommendation.assetId}`}>
+                      <em
+                        key={`${recommendation.agentId}-${recommendation.assetId}`}
+                      >
                         Agent recommends: {recommendation.reason}
                       </em>
                     ))}
@@ -279,14 +319,18 @@ export function ProductionAssets({
                             shotId: shot.id,
                           });
                           setAssets(next);
-                          setStatus(`Human selected a visual for Shot ${index + 1}.`);
+                          setStatus(
+                            `Human selected a visual for Shot ${index + 1}.`,
+                          );
                           onRevision(next.revision);
                         } finally {
                           setBusy(false);
                         }
                       }}
                     >
-                      {shot.selectedAssetId === assetId ? 'Selected' : 'Use this visual'}
+                      {shot.selectedAssetId === assetId
+                        ? 'Selected'
+                        : 'Use this visual'}
                     </button>
                   </div>
                 );
@@ -311,13 +355,19 @@ export function ProductionAssets({
               }
             >
               <option value="">All</option>
-              {['queued', 'claimed', 'running', 'waiting', 'succeeded', 'failed', 'canceled'].map(
-                (value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ),
-              )}
+              {[
+                'queued',
+                'claimed',
+                'running',
+                'waiting',
+                'succeeded',
+                'failed',
+                'canceled',
+              ].map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
             </select>
           </label>
           <button
@@ -338,12 +388,16 @@ export function ProductionAssets({
           <div className="activity-rows">
             {activity.tasks.map((task) => (
               <article key={task.id}>
-                <strong>{task.status} · {task.kind}</strong>
+                <strong>
+                  {task.status} · {task.kind}
+                </strong>
                 <p>{task.instruction}</p>
                 <small>
                   Revision {task.baseRevision}
-                  {task.resultRevision ? ` → ${task.resultRevision}` : ''} ·{' '}
-                  {task.shotIds.length} target{task.shotIds.length === 1 ? '' : 's'}
+                  {task.resultRevision
+                    ? ` → ${task.resultRevision}`
+                    : ''} · {task.shotIds.length} target
+                  {task.shotIds.length === 1 ? '' : 's'}
                 </small>
                 {task.status === 'failed' || task.status === 'canceled' ? (
                   <button
@@ -356,7 +410,9 @@ export function ProductionAssets({
                           expectedProjectRevision: assets.revision,
                         });
                         setActivity(await client.getActivity(projectId));
-                        setStatus(`Task ${task.id.slice(0, 8)} queued as a retry.`);
+                        setStatus(
+                          `Task ${task.id.slice(0, 8)} queued as a retry.`,
+                        );
                       } finally {
                         setBusy(false);
                       }
@@ -374,7 +430,9 @@ export function ProductionAssets({
                   ))}
               </article>
             ))}
-            {activity.tasks.length === 0 ? <p>No activity matches this filter.</p> : null}
+            {activity.tasks.length === 0 ? (
+              <p>No activity matches this filter.</p>
+            ) : null}
           </div>
         ) : (
           <p>Load Activity to inspect tasks and receipts.</p>

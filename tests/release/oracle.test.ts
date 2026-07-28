@@ -229,7 +229,8 @@ test('fresh full oracle shares browser CLI truth and publishes receipt-backed du
   const activity = await human.getActivity(project.id);
   assert.equal(
     activity.receipts.some(
-      (receipt) => receipt.summary === 'Attached agent visual for the second shot.',
+      (receipt) =>
+        receipt.summary === 'Attached agent visual for the second shot.',
     ),
     true,
   );
@@ -260,7 +261,10 @@ test('fresh full oracle shares browser CLI truth and publishes receipt-backed du
   await service.close();
   store.close();
   const reopenedStore = openProjectStore(databasePath, { managedRoot });
-  const reopenedService = await startLocalService({ port: 0, store: reopenedStore });
+  const reopenedService = await startLocalService({
+    port: 0,
+    store: reopenedStore,
+  });
   const reopenedHuman = new RantClient({
     baseUrl: reopenedService.url,
     credential: humanCredential.token,
