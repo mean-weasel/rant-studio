@@ -1,0 +1,1443 @@
+version: 2
+
+goal:
+  title: "Rant Studio Production V1"
+  slug: "rant-studio-production-v1"
+  kind: existing_plan
+  tranche: "Continuous production implementation until the complete V1 workflow and all oracle gates pass."
+  status: done
+  oracle:
+    signal: "Fresh-project browser-and-CLI walkthrough renders valid 16:9 and 9:16 MP4s and passes model, service, CLI, browser, media, safety, and 150-shot gates."
+    cadence: "After each Worker package, at architecture/media phase boundaries, and at final audit."
+    final_proof: "Receipt-backed mapping from every approved V1 acceptance criterion to passing commands, artifacts, and the final live walkthrough."
+  intake:
+    original_request: "Use the approved Rant Studio specification and fixed mock-up to prepare a rigorous production implementation plan with GoalBuddy."
+    interpreted_outcome: "Deliver working local-first Rant Studio V1 with one shared revisioned browser-and-agent workflow and real dual-format rendering."
+    input_shape: existing_plan
+    audience: "YouTube commentary creators collaborating with external agents"
+    authority: approved
+    proof_type: test
+    completion_proof: "A fresh local fixture completes the full browser-and-CLI workflow, renders both MP4 formats, passes deterministic media and 150-shot performance fixtures, and survives final Judge audit."
+    likely_misfire: "Polish or re-platform the five-shot mock-up while omitting durable state, authority enforcement, CLI parity, media correctness, recovery, or scale."
+    blind_spots_considered:
+      - "Provider adapters and secret handling"
+      - "Revision conflicts and stale proposals"
+      - "Cancellable and recoverable long-running jobs"
+      - "Managed-media path and symlink safety"
+      - "150-shot windowing with scroll and draft preservation"
+      - "Per-shot and per-format preview overrides"
+      - "Deterministic render and atomic publication"
+    existing_plan_facts:
+      - "docs/superpowers/specs/2026-07-27-rant-studio-design.md is the approved contract."
+      - "Its Interactive Prototype Evidence section is the interaction oracle and production-gap map."
+      - "The completed mock-up board is evidence, not an implementation dependency."
+      - "Browser and CLI must share one revisioned local service and SQLite model."
+      - "Human authority gates are enforced service-side."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  exact_human_approval_can_terminal_wait: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/rant-studio-production-v1/"
+    command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.1/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/rant-studio-production-v1"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the approved production plan against current repo reality and authorize or repair the queued vertical-slice sequence."
+    inputs:
+      - "docs/superpowers/specs/2026-07-27-rant-studio-design.md"
+      - "Interactive Prototype Evidence references"
+      - "Current repository layout, scripts, tests, worktree, and dirty state"
+      - "Queued task definitions in this board"
+    constraints:
+      - "Read-only; do not edit implementation or board files."
+      - "Preserve every approved V1 acceptance criterion."
+      - "Challenge file scopes, phase order, hidden dependencies, migration assumptions, and verification strength."
+      - "Do not approve implementation that merely extends in-memory mock state."
+    expected_output:
+      - "approved | revise"
+      - "Architecture and sequencing decision"
+      - "Required repairs to queued task objectives, allowed_files, verify, or stop_if"
+      - "Risks and dependency gates"
+      - "Exact next Worker task"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "The approved sequence is viable, but the repo is still a Vite-only in-memory prototype with no production service, CLI, SQLite, media worker, or production gate scripts. T010 is the correct largest safe first slice after adding monorepo paths, preserving the prototype, and requiring baseline plus new contract gates. Later Worker scopes must be repaired to actual apps/packages paths before activation, and T080 must not permit GoalBuddy or approved-spec edits. Node 22 and FFmpeg/ffprobe are available; current check, build, and 16 browser tests pass."
+      worker_package:
+        objective: "Establish the production monorepo foundation beside the preserved prototype: shared domain/API packages, SQLite migrations, revisioned loopback service, authority enforcement, and CLI client."
+        allowed_files:
+          - .gitignore
+          - package.json
+          - package-lock.json
+          - "tsconfig*.json"
+          - vite.config.ts
+          - "apps/**"
+          - "packages/**"
+          - "src/**"
+          - "server/**"
+          - "shared/**"
+          - "cli/**"
+          - "db/**"
+          - "migrations/**"
+          - "tests/**"
+          - "fixtures/**"
+          - "scripts/**"
+          - README.md
+        verify:
+          - "git diff --check"
+          - "npm run check"
+          - "npm run build"
+          - "npm run test:model"
+          - "npm run test:service"
+          - "npm run test:cli"
+          - "npm run test:e2e"
+        stop_if:
+          - "The required storage or service design conflicts with the approved specification."
+          - "A migration would destroy or overwrite existing user data."
+          - "The prototype cannot remain runnable while the production boundary is introduced."
+          - "Need files outside allowed_files."
+          - "Verification fails twice for the same unresolved cause."
+      evidence:
+        - docs/superpowers/specs/2026-07-27-rant-studio-design.md
+        - "package.json contains only Vite mock-up scripts and React dependencies"
+        - "src/App.tsx is the only stateful application implementation"
+        - "No apps/, packages/, service, CLI, database, migrations, fixtures, or media worker exist"
+        - "Node v22.22.3, FFmpeg 8.1, and ffprobe 8.1 are locally available"
+        - "npm run check passed"
+        - "npm run build passed"
+        - "npm run test:e2e passed: 16 tests"
+      blocked_tasks: []
+      missing_evidence:
+        - "No production persistence, restart, browser/CLI parity, authority, safety, media, or 150-shot evidence exists yet"
+      required_board_updates:
+        - "T010 was repaired with apps/**, packages/**, .gitignore, monorepo acceptance, and baseline gate preservation."
+        - "Before activating T020 through T080, replace placeholder legacy scopes with the actual T010 workspace paths and add git diff --check."
+        - "Before activating T080, replace docs/** with explicitly bounded operator-documentation paths so GoalBuddy and the approved specification remain PM-owned."
+        - "Treat the current dirty/untracked prototype as owner work and preserve it; the recorded dirty fingerprint is the baseline."
+      harness: codex
+  - id: T010
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Establish the production monorepo foundation beside the preserved prototype: shared domain/API packages, SQLite migrations, revisioned loopback service, authority enforcement, and CLI client."
+    inputs:
+      - "T001 receipt and any PM board repairs"
+      - "Approved design: Architecture, Core Data Model, Authority Rules, Local Safety and Privacy"
+      - "Prototype evidence as interaction reference only"
+    constraints:
+      - "Do not persist production state in the mock-up's in-memory arrays."
+      - "Keep the service loopback-only by default."
+      - "Make browser and CLI read and mutate through the same service contracts."
+      - "Enforce authority in the service, never only by hiding browser controls."
+      - "Use additive, reversible migrations and deterministic test fixtures."
+      - "Preserve the working prototype while introducing the production boundary."
+      - "Use explicit monorepo runtime/package boundaries consistent with the approved four-part architecture."
+    acceptance_criteria:
+      - "A fresh database migrates reproducibly and opens a versioned local project store."
+      - "The workspace has explicit web, service, CLI, shared model/API, and future media-worker boundaries; the prototype remains runnable during migration."
+      - "Core entities cover projects, source media, transcript revisions, shots, assets, selections, agent sessions/tasks/proposals, history, and jobs without depending on React state."
+      - "Every protected mutation requires a human authority context; an agent context receives a structured denial and leaves the revision unchanged."
+      - "Successful mutations commit transactionally, increment a confirmed project revision, and emit a consumable local event."
+      - "Browser and CLI test clients read the same revision and observe each other's permitted writes."
+      - "Loopback binding, local credentials, and provider-secret exclusion are covered by tests."
+    expected_output:
+      - "Working production service foundation and migration path"
+      - "Shared browser/CLI contracts"
+      - "Model, service, authority, and event tests"
+      - "Receipt naming schema decisions and verification evidence"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "vite.config.ts"
+      - ".gitignore"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "cli/**"
+      - "db/**"
+      - "migrations/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "scripts/**"
+      - "README.md"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run build"
+      - "npm run test:model"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:e2e"
+    stop_if:
+      - "T001 has not approved or repaired the architecture and task sequence."
+      - "The required storage or service design conflicts with the approved specification."
+      - "A migration would destroy or overwrite existing user data."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - .gitignore
+        - README.md
+        - package.json
+        - package-lock.json
+        - tsconfig.foundation.json
+        - apps/cli/package.json
+        - apps/cli/src/index.ts
+        - apps/media-worker/package.json
+        - apps/media-worker/src/index.ts
+        - apps/service/package.json
+        - apps/service/src/index.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - apps/web/package.json
+        - apps/web/src/client.ts
+        - packages/api/package.json
+        - packages/api/src/index.ts
+        - packages/model/package.json
+        - packages/model/src/index.ts
+        - tests/cli/foundation.test.ts
+        - tests/model/foundation.test.ts
+        - tests/service/foundation.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run build"
+          status: pass
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run test:e2e"
+          status: pass
+      summary: "Established explicit web, loopback service, CLI, shared API/model, and media-worker workspace boundaries beside the preserved prototype. Added additive SQLite migrations for the complete V1 domain, transactional revisioned mutations and events, service-side human/agent authority, revocable scoped credentials, secret exclusion, shared browser/CLI clients, and contract coverage. The full baseline and foundation oracle passes. T011 records the independently observed test-discovery isolation follow-up."
+  - id: T011
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: "Isolate Playwright browser discovery from the production Node contract suites so each verification command proves only its named layer."
+    inputs:
+      - "T010 receipt and its passing model, service, CLI, and browser suites"
+      - "Observed npm run test:e2e output importing tests/**/*.test.ts as well as browser specs"
+    constraints:
+      - "Do not change product behavior or weaken any test."
+      - "Keep Node contract suites independently runnable through their existing scripts."
+      - "Keep every existing Playwright spec discoverable."
+    acceptance_criteria:
+      - "npm run test:e2e discovers the 16 existing *.spec.ts browser tests and no Node *.test.ts contract suite."
+      - "Model, service, and CLI contract scripts remain independently green."
+    expected_output:
+      - "A narrowly scoped Playwright discovery rule"
+      - "Verification output proving browser and Node suite isolation"
+    allowed_files:
+      - "playwright.config.ts"
+    verify:
+      - "git diff --check"
+      - "npm run test:model"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:e2e"
+    stop_if:
+      - "A fix requires changing product behavior or files outside allowed_files."
+      - "Any existing browser spec becomes undiscoverable."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - playwright.config.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run test:e2e"
+          status: pass
+      summary: "Added a narrow Playwright testMatch rule for **/*.spec.ts. Browser verification now discovers exactly the existing 16 Playwright specs without importing Node *.test.ts contract suites. Model, service, CLI, and browser suites all remain independently green."
+      deviations: []
+      remaining_blockers: []
+      verification_attempts: 1
+      stopped_because: null
+  - id: T020
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Deliver the project-intake vertical slice: project creation, narration ingest, timestamp-transcript import/provider adapter, validation, retry, and shared browser/CLI visibility."
+    inputs:
+      - "T010 receipt and production service contracts"
+      - "Approved design: End-to-End Workflow steps 1–3 and Failure Handling"
+      - "Deterministic narration and transcript fixtures"
+    constraints:
+      - "Keep built-in audio recording out of scope."
+      - "Preserve source audio, raw provider response, word timestamps, and retry attempts."
+      - "Never store provider credentials in project history or fixtures."
+      - "Reject unsupported files, traversal, symlink escape, malformed timestamps, and impossible word ordering."
+    acceptance_criteria:
+      - "A creator can create a named local project and ingest one supported narration file."
+      - "The project can import validated word-timestamp JSON and can run a deterministic transcription adapter through the same persistent job interface used by real providers."
+      - "Retry creates a new attempt without overwriting a usable transcript or raw provider response."
+      - "Validation failures are actionable, non-destructive, and visible in both browser status and CLI output."
+      - "The browser displays the untouched transcript and source timing; the CLI reads the identical revision and word records."
+      - "Restarting the service preserves the project, media reference, transcript, attempts, and job state."
+    expected_output:
+      - "Working intake UI, API, persistence, CLI read path, and deterministic adapter"
+      - "Safety, validation, retry, restart, and browser workflow tests"
+      - "Receipt with fixture paths and verification evidence"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "cli/**"
+      - "db/**"
+      - "migrations/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "scripts/**"
+      - "README.md"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run test:intake"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:e2e -- --grep intake"
+    stop_if:
+      - "T010 contracts or migrations are not current and green."
+      - "A provider integration requires unavailable credentials; implement and verify the deterministic adapter and continue other safe work."
+      - "Media copying would escape the configured managed-media root."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - README.md
+        - package.json
+        - package-lock.json
+        - tsconfig.app.json
+        - tsconfig.foundation.json
+        - apps/cli/src/index.ts
+        - apps/service/src/main.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - packages/api/src/index.ts
+        - packages/model/src/index.ts
+        - packages/transcription/package.json
+        - packages/transcription/src/index.ts
+        - src/ProductionIntake.tsx
+        - src/main.tsx
+        - src/styles.css
+        - tests/cli/foundation.test.ts
+        - tests/intake/intake.test.ts
+        - tests/intake.spec.ts
+        - tests/service/foundation.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep intake"
+          status: pass
+      summary: "Delivered the real local intake slice: additive migration v2, managed checksum-backed WAV ingest, traversal and symlink defenses, validated word-timestamp JSON, deterministic provider adapter, persistent jobs/attempts/raw artifacts, non-destructive failed retries, restart persistence, scoped API routes, shared CLI reads, a runnable loopback service, and a responsive browser intake surface. Browser, CLI, and restart tests prove the same revision, source, and untouched timestamp words."
+      deviations: []
+      remaining_blockers: []
+      verification_attempts: 3
+      stopped_because: null
+  - id: T021
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: "Keep the default local service data directory out of source control."
+    inputs:
+      - "T020 runnable service defaults to .rant-studio/"
+    constraints:
+      - "Do not ignore source, fixtures, or GoalBuddy evidence."
+      - "Do not modify runtime or product behavior."
+    acceptance_criteria:
+      - "The default .rant-studio/ runtime database and managed-media directory is ignored."
+    expected_output:
+      - "One narrowly scoped ignore rule"
+    allowed_files:
+      - ".gitignore"
+    verify:
+      - "git diff --check"
+      - "git check-ignore .rant-studio/example.sqlite"
+    stop_if:
+      - "The ignore rule would cover files outside the default runtime directory."
+      - "Need files outside allowed_files."
+    receipt:
+      result: done
+      changed_files:
+        - .gitignore
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "git check-ignore .rant-studio/example.sqlite"
+          status: pass
+      summary: "Added one narrowly scoped .rant-studio/ ignore rule covering the default local runtime database and managed-media directory without affecting source, fixtures, or GoalBuddy evidence."
+      deviations: []
+      remaining_blockers: []
+      verification_attempts: 1
+      stopped_because: null
+  - id: T030
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Deliver transcript correction and chronological shot proposals as a revision-safe human/agent vertical slice."
+    inputs:
+      - "T020 receipt and persistent transcript model"
+      - "Approved design: Transcript Corrections, Shot-Proposal Workflow, Agent Sessions, and stale proposal rules"
+      - "Prototype editorial-core and UX-hardening oracles"
+    constraints:
+      - "Corrections must preserve raw provider text and timestamp lineage."
+      - "Agents submit staged proposals; they never apply protected changes."
+      - "Every proposal records its base project and transcript revisions."
+      - "Reject invalid, overlapping, gapped, reordered, stale, or unauthorized proposals without partial mutation."
+    acceptance_criteria:
+      - "A human can correct transcript words without mutating the raw transcript or losing word-level timing."
+      - "An attached CLI agent can read the current transcript, claim a task, and submit a complete chronological shot proposal with themes and rationale."
+      - "Detached-agent, working, failed, canceled, stale, reject, regenerate, boundary-adjust, and accept states are observable and keyboard reachable."
+      - "Boundary adjustments keep adjacent endpoints contiguous and exact transcript coverage remains true."
+      - "Accepting a current proposal transactionally creates stable shot IDs and a checkpoint; rejecting or failing leaves the project unchanged."
+      - "Accepted transcript, pacing, constraints, timing, and agent receipt match what the human reviewed."
+    expected_output:
+      - "Working transcript-correction and proposal workflow across browser, service, and CLI"
+      - "Coverage, staleness, authority, rollback, accessibility, and browser tests"
+      - "Receipt linking prototype invariants to production evidence"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "cli/**"
+      - "db/**"
+      - "migrations/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "README.md"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run test:model"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:e2e -- --grep \"transcript|proposal\""
+    stop_if:
+      - "Transcript revision lineage or proposal authority cannot be represented by the T010 model without a reviewed migration."
+      - "Exact word coverage cannot be proved from the chosen fixture."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - apps/cli/src/index.ts
+        - apps/service/src/main.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - packages/api/src/index.ts
+        - packages/model/src/index.ts
+        - src/ProductionEditorial.tsx
+        - src/ProductionIntake.tsx
+        - src/styles.css
+        - tests/cli/foundation.test.ts
+        - tests/production-editorial.spec.ts
+        - tests/service/editorial.test.ts
+        - tests/service/foundation.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep \"transcript|proposal\""
+          status: pass
+      summary: "Delivered revision-safe transcript correction and staged shot proposals across browser, service, and CLI. Raw provider revisions stay immutable while corrected revisions preserve word timing and lineage. Scoped agents attach, claim tasks, and submit exact chronological coverage with pacing, constraints, themes, rationale, and transcript chunks. Human-only boundary adjustment, rejection/regeneration, and acceptance are service enforced; stale, gapped, unauthorized, and detached paths fail without partial mutation. Acceptance creates stable shot IDs, a checkpoint, task receipt, and one confirmed project revision."
+      deviations: []
+      remaining_blockers: []
+      verification_attempts: 3
+      stopped_because: null
+  - id: T040
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Deliver the production Shot Ledger: stable shot ancestry, split/merge/cut/reorder, checkpoints, undo/restore, and attributed linear history."
+    inputs:
+      - "T030 receipt and accepted-shot model"
+      - "Approved design: Shot Ledger, Reordering and Cuts, History, and version-one acceptance criterion 5"
+      - "Hardened ledger interaction oracle"
+    constraints:
+      - "Shot IDs remain independent of visible ordinal."
+      - "Boundary edits preserve IDs; split and merge create new IDs with ancestry."
+      - "All protected edits are human-authorized, transactional, attributed, and reversible."
+      - "Agent task targets must remain explainable after later editorial edits."
+    acceptance_criteria:
+      - "A creator can select, split, merge where allowed, trim, cut, and reorder accepted narration without losing transcript/source lineage."
+      - "The service rejects invalid ranges, gaps that violate the chosen edit semantics, revision conflicts, and unauthorized agent edits without partial writes."
+      - "Undo and named checkpoint restore are durable service operations that survive restart."
+      - "History is append-only, attributed, paginatable, and explains ancestry and protected decisions."
+      - "The ledger preserves focus, draft edits, and current selection through successful updates and reports conflicts without discarding user input."
+      - "Browser and CLI read the same resulting sequence and revision."
+    expected_output:
+      - "Working revisioned Shot Ledger and history workflow"
+      - "Ancestry, edit, conflict, undo, restart, accessibility, and browser tests"
+      - "Receipt with before/after revision examples"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "cli/**"
+      - "db/**"
+      - "migrations/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "README.md"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run test:model"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:e2e -- --grep \"ledger|history|undo|checkpoint\""
+    stop_if:
+      - "An edit would sever transcript/source lineage or make historical task targets unresolvable."
+      - "Undo or restore cannot be transactional with the current revision model."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - apps/cli/src/index.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - packages/api/src/index.ts
+        - packages/model/src/index.ts
+        - src/ProductionEditorial.tsx
+        - src/ProductionLedger.tsx
+        - src/styles.css
+        - tests/cli/foundation.test.ts
+        - tests/production-editorial.spec.ts
+        - tests/service/foundation.test.ts
+        - tests/service/ledger.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep \"ledger|history|undo|checkpoint\""
+          status: pass
+      summary: "Delivered a revisioned production Shot Ledger backed by logical shot entities and immutable shot-version snapshots. Reorder, trim, and cut preserve IDs; split and merge create new IDs with attributed ancestry. Human-only edits reject stale revisions and invalid ranges transactionally. Named checkpoints, restore, and undo create durable forward revisions that survive restart. Browser controls preserve selected-row focus, expose live history, and share the same ledger revision and IDs read through the CLI."
+      deviations: []
+      remaining_blockers: []
+      verification_attempts: 2
+      stopped_because: null
+  - id: T050
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Deliver managed visual assets and the shared human/agent collaboration surface with provenance, multi-shot targeting, durable tasks, and human-only selection."
+    inputs:
+      - "T040 receipt and stable shot/history model"
+      - "Approved design: Asset Workflow, Agent Sessions, CLI Contract, Activity, Authority Rules, and Local Safety"
+      - "Prototype collaboration-output and UX-hardening oracles"
+    constraints:
+      - "Agents may attach and recommend candidates but cannot select, replace, detach protected selections, or approve output."
+      - "Every asset has checksum-backed provenance and safe managed-media placement."
+      - "Task claims, retries, cancellation, interruption, and stale completion are durable and revision-aware."
+      - "Do not build web search or generation providers into V1."
+    acceptance_criteria:
+      - "Humans can upload supported image/video candidates; agents can attach candidates through CLI using the same service."
+      - "Traversal, symlink escape, unsupported formats, duplicates, interrupted copies, and provenance failures are handled safely and visibly."
+      - "Every counted candidate is reachable through a bounded tray, with selection and scroll position preserved as live candidates arrive."
+      - "Single- and multi-shot targets are explicit in browser and CLI; quick actions populate the shared command surface without silently starting work."
+      - "Agent jobs support queued, claimed, running, waiting, succeeded, failed, and canceled states with idempotent receipts and stale-result guards."
+      - "Only a human can set or clear the active visual; agent additions never overwrite that choice."
+      - "Activity is append-only and filterable, and compact receipts link to tasks, targets, authority, provenance, and resulting revisions."
+    expected_output:
+      - "Working safe asset intake and browser/CLI collaboration workflow"
+      - "Managed-media, authority, task lifecycle, provenance, live-update, and browser tests"
+      - "Receipt with representative human and agent flows"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "cli/**"
+      - "db/**"
+      - "migrations/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "scripts/**"
+      - "README.md"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run test:assets"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:e2e -- --grep \"asset|candidate|agent|activity\""
+    stop_if:
+      - "An asset operation can escape the managed-media root or lose provenance."
+      - "An agent path can apply a protected human decision."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - package.json
+        - tsconfig.foundation.json
+        - apps/cli/src/index.ts
+        - apps/service/src/main.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - packages/api/src/index.ts
+        - packages/model/src/index.ts
+        - src/ProductionAssets.tsx
+        - src/ProductionLedger.tsx
+        - src/styles.css
+        - tests/assets/assets.test.ts
+        - tests/cli/foundation.test.ts
+        - tests/production-editorial.spec.ts
+        - tests/service/foundation.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:assets"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep \"asset|candidate|agent|activity\""
+          status: pass
+      summary: "Delivered checksum-backed PNG/MP4 candidate intake across browser and CLI, managed-media safety, explicit single/multi-shot targets, bounded trays with stable live-update scrolling, durable agent-task states and idempotent receipts, revision guards, recommendations, retry lineage, and filterable Activity. Human-only selection and clearing are enforced service-side; agent additions cannot overwrite active visuals. Browser quick actions prefill the shared command surface without starting work. Added traversal/name/format/deduplication/interrupted-copy/provenance tests, CLI parity, and an end-to-end human/agent flow."
+  - id: T055
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit the completed shared-state, authority, editorial, asset, and agent foundation before scale and real media work."
+    inputs:
+      - "T010 through T050 receipts"
+      - "Current migrations and service contracts"
+      - "Current browser and CLI gate results"
+      - "Dirty diff and unresolved deferrals"
+    constraints:
+      - "Read-only; do not implement."
+      - "Reject the phase boundary if browser/CLI state diverges, protected authority is bypassable, migrations are unsafe, or receipts do not prove restart and stale-state behavior."
+      - "Specify one coherent repair Worker when rejection is necessary."
+    expected_output:
+      - "proceed | repair"
+      - "Acceptance mapping through T050"
+      - "Architecture, migration, authority, and recovery risks"
+      - "Exact repair task if needed"
+      - "Authorization for T060 when safe"
+    receipt:
+      result: done
+      decision: repair
+      full_outcome_complete: false
+      rationale: "The shared model, browser/CLI revision boundary, service-side human authority, additive migrations, stale proposal/task guards, managed-media safety, and current T010–T050 gates are coherent. The phase cannot yet proceed because T050 proves lease interruption and stale completion only in-process; it does not reopen the same database/media root and prove durable asset, task, receipt, recommendation, and selection recovery. CLI symlink/non-regular rejection is implemented but lacks a regression oracle."
+      acceptance_mapping:
+        shared_revision_truth: "pass: service, CLI, and production browser flows consume the same revisioned API and the T050 end-to-end test observes external agent mutations after refresh"
+        human_authority: "pass: service rejects agent proposal acceptance, ledger edits, active visual selection/clearing, and protected output decisions without revision change"
+        migrations: "pass: seven additive migrations are applied transactionally and fresh-schema tests verify the current table set"
+        stale_state: "pass: stale proposals, ledger edits, asset writes, and terminal task completion are rejected without partial mutation"
+        restart_recovery: "repair: ledger checkpoint/undo restart is proven, but asset/task/receipt/selection restart recovery is not"
+        cli_path_safety: "repair: implementation rejects symlink, non-regular, and unsupported extensions, but the exact no-mutation behavior is untested"
+      evidence:
+        - "npm run check passed"
+        - "npm run test:assets passed: 3 tests"
+        - "npm run test:service passed: 8 tests"
+        - "npm run test:cli passed: 3 tests"
+        - "npm run test:e2e -- --grep \"asset|candidate|agent|activity\" passed: 5 tests"
+        - "tests/service/ledger.test.ts reopens the same database for ledger recovery"
+        - "tests/assets/assets.test.ts covers stale writes, lease expiry, idempotent receipts, authority, provenance, and atomic cleanup in-process"
+      missing_evidence:
+        - "Reopen the same database and managed-media root after asset/task mutations and compare durable state"
+        - "Reclaim or document an interrupted claimed/running task after restart without duplicate receipts"
+        - "CLI symlink, non-regular, and unsupported-extension rejection with zero revision/media mutation"
+        - "Browser and CLI reconnection to the reopened service at one revision and Activity state"
+      worker_package:
+        objective: "Close the T055 phase-boundary recovery evidence gap by proving asset/task state survives restart and CLI asset paths cannot use symlinks or unsupported files."
+        allowed_files:
+          - package.json
+          - "tsconfig*.json"
+          - "apps/cli/**"
+          - "apps/service/**"
+          - "packages/api/**"
+          - "packages/model/**"
+          - "tests/assets/**"
+          - "tests/cli/**"
+          - "tests/service/**"
+        verify:
+          - "git diff --check"
+          - "npm run check"
+          - "npm run test:assets"
+          - "npm run test:service"
+          - "npm run test:cli"
+        stop_if:
+          - "Restart recovery requires a destructive migration or data rewrite."
+          - "The repair would change approved human/agent authority."
+          - "Need files outside allowed_files."
+          - "Verification fails twice for the same unresolved cause."
+  - id: T056
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Close the T055 phase-boundary recovery evidence gap by proving asset/task state survives restart and CLI asset paths cannot use symlinks or unsupported files."
+    inputs:
+      - "T055 repair receipt"
+      - "T050 managed-media, durable-task, Activity, and CLI implementation"
+      - "Approved design: Failure Handling, Local Safety and Privacy, and Testing Strategy"
+    constraints:
+      - "Do not change authority semantics or weaken existing stale-result checks."
+      - "Restart tests must reopen the same SQLite database and managed-media root, not reconstruct equivalent state."
+      - "A rejected CLI path must not contact the service or advance project revision."
+      - "Keep the repair limited to recovery/safety evidence and any directly exposed defect."
+    acceptance_criteria:
+      - "After closing and reopening the store/service, candidates, checksums, provenance, recommendations, human selections, task status, retry lineage, and terminal/interrupted receipts remain identical and queryable."
+      - "A claimed/running task interrupted by restart becomes safely reclaimable or retains a documented lease state without duplicate terminal receipts."
+      - "The CLI rejects symlink, non-regular, and unsupported-extension asset paths before upload; project revision, candidates, and managed files remain unchanged."
+      - "Browser and CLI clients reconnect to the reopened service and observe the same project revision and Activity state."
+    expected_output:
+      - "Restart-persistence and CLI path-safety regression coverage"
+      - "Any minimal recovery fix exposed by the tests"
+      - "Receipt authorizing T060 when all phase evidence is green"
+    allowed_files:
+      - "package.json"
+      - "tsconfig*.json"
+      - "apps/cli/**"
+      - "apps/service/**"
+      - "packages/api/**"
+      - "packages/model/**"
+      - "tests/assets/**"
+      - "tests/cli/**"
+      - "tests/service/**"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run test:assets"
+      - "npm run test:service"
+      - "npm run test:cli"
+    stop_if:
+      - "Restart recovery requires a destructive migration or data rewrite."
+      - "The repair would change approved human/agent authority."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - tests/assets/assets.test.ts
+        - tests/cli/foundation.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:assets"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+      summary: "Closed the phase-boundary recovery gap with a real same-database/same-media-root restart oracle. It verifies checksums, provenance, candidates, recommendations, human selections, task states, retry lineage, idempotent terminal receipts, interrupted-claim reaping and reclaim, plus browser/API and CLI revision/Activity parity after reconnect. Added CLI regression coverage proving symlink, directory, and unsupported-extension asset paths are rejected before upload with unchanged revision, no candidate rows, and no managed asset directory."
+  - id: T060
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Make transcript and ledger workflows production-scalable, including the 150-shot fixture, windowing, navigation, filtering, and live-update stability."
+    inputs:
+      - "T055 proceed receipt or completed repair receipt"
+      - "Approved design: Testing Strategy performance fixture"
+      - "Prototype long-content, responsive navigation, compact dock, and candidate-tray invariants"
+    constraints:
+      - "Do not trade accessibility or keyboard reachability for windowing performance."
+      - "Preserve focused controls, selected shots, nested scroll positions, and unsaved drafts during live events."
+      - "Measure with the deterministic 15-minute, 150-shot fixture."
+    acceptance_criteria:
+      - "Long transcripts support find/jump, chunked correction, and word-timestamp integrity without rendering the entire document at once."
+      - "The Shot Ledger windows 150 shots and keeps scroll position stable as agent, job, selection, and history events arrive."
+      - "Search covers shot ID, timing, transcript, and theme; filters cover visual/task/completion state; users can jump to current and incomplete shots."
+      - "Completion summaries and filtered counts derive from live state and remain screen-reader legible."
+      - "Long words, URLs, filenames, emoji runs, transcript chunks, and candidate sets remain bounded without document overflow at 320 px and desktop widths."
+      - "Performance thresholds and interaction latency are recorded as deterministic assertions rather than visual judgment."
+    expected_output:
+      - "Scalable accessible transcript and ledger UX"
+      - "150-shot fixture, performance assertions, mobile/desktop overflow tests, and live-update stability tests"
+      - "Receipt with measured thresholds and results"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "scripts/**"
+      - "README.md"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run test:e2e -- --grep \"scale|150-shot|responsive|overflow\""
+      - "npm run test:performance"
+      - "npm run test:a11y"
+    stop_if:
+      - "T055 has not authorized the scale/media phase."
+      - "Windowing loses an active draft, focus target, selection, or scroll position."
+      - "The performance gate is not deterministic on the supported local environment."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - package.json
+        - src/TranscriptNavigator.tsx
+        - src/ProductionIntake.tsx
+        - src/ProductionEditorial.tsx
+        - src/ProductionLedger.tsx
+        - src/styles.css
+        - tests/scale.spec.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep \"scale|150-shot|responsive|overflow\""
+          status: pass
+        - cmd: "npm run test:performance"
+          status: pass
+        - cmd: "npm run test:a11y"
+          status: pass
+      summary: "Added chunked 40-word transcript navigation with find/jump and correction selection, plus an accessible 20-row virtual Shot Ledger with ID/timing/transcript/theme search, visual/task/completion filters, current/incomplete jumps, and live summaries. The deterministic 15-minute/150-shot fixture asserts sub-2-second load, sub-500ms search, scroll/selection/draft preservation during live task refresh, keyboard focus, and semantic set size. At 320px, long tokens, URLs, filenames, emoji runs, transcript chunks, and an eight-item candidate tray remain internally bounded with zero document overflow."
+  - id: T070
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Deliver real preview, deterministic preflight, and revision-bound dual-format rendering with persistent recoverable jobs."
+    inputs:
+      - "T060 receipt and stable scalable edit model"
+      - "Approved design: Preview, Output Settings, Render Semantics, Failure Handling, and Deterministic Media Fixtures"
+      - "Prototype preview and export authority oracle"
+    constraints:
+      - "Preview and render must consume a declared immutable project revision."
+      - "Clip audio is muted; narration remains authoritative."
+      - "Short clips freeze their final frame; long clips trim deterministically."
+      - "Missing visuals warn with unmistakable placeholders; missing audio, invalid ranges, unreadable media, and impossible dimensions block."
+      - "Only a human may authorize incomplete final output."
+      - "Failed or canceled renders never replace the last valid artifact."
+    acceptance_criteria:
+      - "Preview can play an individual shot and the assembled revision, identify the current shot/source range, show missing placeholders, and return to the corresponding ledger shot."
+      - "Crop/fit and captions are independent per shot and output format and survive restart."
+      - "Preflight derives every warning, blocking error, incomplete-shot reference, and confirmation from one immutable revision."
+      - "Render jobs persist queued/running/waiting/failed/canceled/succeeded state and safely resume or retry after restart."
+      - "Successful jobs atomically publish playable 1920×1080 16:9 and 1080×1920 9:16 MP4 files with expected duration, narration, visuals, captions, and placeholders."
+      - "Changing the project while a preview/export gate is open forces a revision recheck instead of exporting stale assumptions."
+      - "Deterministic media tests prove reordered audio, stills, trim/freeze, muted candidate audio, captions, format overrides, and placeholder frames."
+    expected_output:
+      - "Working preview, preflight, render jobs, and dual MP4 outputs"
+      - "Deterministic media artifacts and automated semantic checks"
+      - "Restart, cancel, retry, stale-revision, atomic-publication, and browser tests"
+      - "Receipt linking artifact checksums and gate results"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "cli/**"
+      - "db/**"
+      - "migrations/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "scripts/**"
+      - "README.md"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run test:media"
+      - "npm run test:service"
+      - "npm run test:e2e -- --grep \"preview|preflight|export|render\""
+      - "npm run test:artifacts"
+    stop_if:
+      - "Required local media tooling is unavailable and no approved deterministic substitute exists."
+      - "A render could publish partial output or overwrite the last good artifact on failure."
+      - "Preflight and render can consume different project revisions."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - package.json
+        - tsconfig.foundation.json
+        - apps/media-worker/src/index.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - packages/api/src/index.ts
+        - packages/model/src/index.ts
+        - src/ProductionLedger.tsx
+        - src/ProductionMedia.tsx
+        - src/styles.css
+        - tests/media/media.test.ts
+        - tests/media.spec.ts
+        - tests/service/foundation.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:media"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep \"preview|preflight|export|render\""
+          status: pass
+        - cmd: "npm run test:artifacts"
+          status: pass
+      artifacts:
+        - format: landscape
+          dimensions: 1920x1080
+          duration_seconds: 2.021333
+          sha256: 5e1884fc7126b2cd33fa2a0766a24f26aefb3ed8312dd3b86dc3fafad78a0f5e
+        - format: vertical
+          dimensions: 1080x1920
+          duration_seconds: 2.021333
+          sha256: 51882b09d98fa6debec8250f7961073011841f24e6ebd02bcef956a84872d572
+      summary: "Delivered revisioned per-shot/per-format fit and captions, shot/assembly preview with return navigation, immutable preflight, human placeholder authority, durable cancel/retry/restart-aware render jobs, and authenticated artifact playback. FFmpeg atomically publishes deterministic 16:9 and 9:16 MP4s. Semantic probes verify reordered narration, selected stills, video trim/final-frame freeze, muted candidate audio, raster captions, contain/cover framing, placeholders, dimensions, duration, audio streams, checksums, stale gate rejection, and preservation of the last valid artifacts after failure."
+  - id: T080
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Harden and package the complete V1 workflow: restart recovery, security boundaries, accessible browser flow, CLI ergonomics, setup, and full-oracle automation."
+    inputs:
+      - "All Worker and T055 receipts"
+      - "Approved Version-One Acceptance Criteria and Explicit Non-Goals"
+      - "All current gate suites and deterministic artifacts"
+    constraints:
+      - "Do not add non-goal scope such as recording, web search, generation providers, hosted collaboration, or YouTube publishing."
+      - "Do not weaken a gate to make the release candidate pass."
+      - "Preserve local-first defaults and existing valid project migrations."
+    acceptance_criteria:
+      - "A new user can install dependencies, start the loopback service/UI, initialize the CLI, and complete the documented fresh-project walkthrough without editing JSON or SQLite."
+      - "The complete browser workflow is keyboard usable, dialog and async status semantics are accessible, and enabled controls always produce observable outcomes."
+      - "Service restart, browser close/reopen, agent disconnect/reclaim, failed jobs, canceled jobs, stale revisions, and interrupted media operations recover without corrupting accepted work."
+      - "CLI help and errors clearly communicate project, revision, target, authority, task, and recovery actions."
+      - "Safety tests cover traversal, symlink escape, credential leakage, unauthorized mutations, loopback binding, malformed imports, and artifact publication."
+      - "One command runs the owned release gates and the README documents fixture setup, real-provider configuration boundaries, troubleshooting, backup, and limitations."
+      - "The full Goal Oracle walkthrough runs against a fresh temporary project and records both output artifacts and receipt/history evidence."
+    expected_output:
+      - "Release-candidate local application and CLI"
+      - "Automated full-oracle workflow and consolidated release gate"
+      - "Operator documentation and troubleshooting"
+      - "Receipt with known limitations and verification evidence"
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "apps/**"
+      - "packages/**"
+      - "src/**"
+      - "server/**"
+      - "shared/**"
+      - "cli/**"
+      - "db/**"
+      - "migrations/**"
+      - "tests/**"
+      - "fixtures/**"
+      - "scripts/**"
+      - "README.md"
+      - "docs/operator/**"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run build"
+      - "npm run test:release"
+      - "npm run test:e2e"
+      - "npm run test:performance"
+      - "npm run test:media"
+      - "npm run test:a11y"
+    stop_if:
+      - "A release gate would require weakening an approved acceptance criterion."
+      - "Fresh setup or the full-oracle walkthrough requires undocumented manual database/media manipulation."
+      - "A security or data-integrity failure remains unresolved."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - README.md
+        - docs/operator/README.md
+        - package.json
+        - tsconfig.foundation.json
+        - apps/cli/src/index.ts
+        - apps/cli/src/main.ts
+        - src/ProductionIntake.tsx
+        - tests/cli/foundation.test.ts
+        - tests/release/oracle.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run build"
+          status: pass
+        - cmd: "npm run test:release"
+          status: pass
+        - cmd: "npm run test:e2e"
+          status: pass
+          detail: "21 passed"
+        - cmd: "npm run test:performance"
+          status: pass
+        - cmd: "npm run test:media"
+          status: pass
+        - cmd: "npm run test:a11y"
+          status: pass
+      oracle:
+        project_revision: 8
+        receipts: 2
+        artifacts:
+          - format: landscape
+            dimensions: 1920x1080
+            sha256: 7cdd26c1ed1724daa33f54b3360d27c6b77dd45ec12874a90cb09585e49003b9
+          - format: vertical
+            dimensions: 1080x1920
+            sha256: ecf676886873aedb94f0aef8194f4fea72d6e060e16ccd7b917b4d7a7a538e37
+      known_limitations:
+        - "V1 accepts WAV narration and PNG/MP4 visual candidates."
+        - "V1 is single-creator and local-first with hard-cut deterministic rendering."
+        - "Recording, hosted collaboration, web search, generation providers, YouTube publishing, and mobile-native clients are explicit non-goals."
+        - "Credential rotation currently requires a new local data root."
+      summary: "Packaged the V1 release path with executable CLI help and structured errors, fresh no-JSON oracle automation, restart and reconnect proof, dual-format artifact evidence, operator setup/backup/recovery/provider documentation, and one consolidated release command. Preserved exact word timestamps for small transcripts while retaining scalable chunk navigation for long transcripts. All exact release, browser, 150-shot performance, media, accessibility, type, build, and diff gates pass."
+  - id: T085
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Close the production interaction and oracle gap: keep external agents truly external, add revision-bound playable shot and assembly preview, connect the production browser to service events without losing interaction state, and replace the API-only release oracle with one fresh browser-and-real-CLI walkthrough covering every V1 acceptance criterion."
+    inputs:
+      - "T999 initial Judge audit"
+      - "Approved V1 acceptance criteria and Goal Oracle"
+      - "Current production browser, service events, CLI, media pipeline, and release oracle"
+    constraints:
+      - "Preview playback must consume an immutable revision and use the same timeline semantics as final rendering."
+      - "The browser must not possess or exercise an agent credential to generate, claim, or submit external-agent work."
+      - "Service-event refresh must preserve focused controls, unsaved drafts, selections, and nested scroll positions."
+      - "Do not weaken human authority, atomic artifact publication, deterministic media probes, or existing migrations."
+      - "The fresh oracle may not require JSON, SQLite, or unmanaged-media manipulation outside documented browser and CLI actions."
+    acceptance_criteria:
+      - "An attached external CLI agent—not browser code—claims the shot-planning task and submits the chronological revision-bound proposal."
+      - "Production preview plays an individual shot and the assembled edit from an immutable project revision before final export."
+      - "The production browser subscribes to service events and applies targeted refreshes while preserving focus, drafts, selection, and nested scroll."
+      - "A fresh Playwright-plus-executable-CLI oracle covers narration intake, transcription, correction, external shot proposal, human acceptance, cut/reorder, human and agent candidates, human-only selection, preview, receipts/history, checkpoint/undo/restore, restart/reconnect, and semantically validated 16:9 and 9:16 artifacts."
+      - "The exact audited release candidate has a refreshed dirty fingerprint."
+    expected_output:
+      - "External-agent dispatch boundary and live service-event updates"
+      - "Revision-bound playable shot and assembly preview"
+      - "Fresh browser-plus-real-CLI full-oracle evidence"
+      - "Receipt with exact gates, artifact hashes, and refreshed dirty fingerprint"
+    allowed_files:
+      - "package.json"
+      - "README.md"
+      - "docs/operator/README.md"
+      - "src/main.tsx"
+      - "src/ProductionIntake.tsx"
+      - "src/ProductionEditorial.tsx"
+      - "src/ProductionLedger.tsx"
+      - "src/ProductionMedia.tsx"
+      - "src/ProductionAssets.tsx"
+      - "src/styles.css"
+      - "apps/cli/**"
+      - "apps/media-worker/**"
+      - "apps/service/**"
+      - "apps/web/**"
+      - "packages/api/**"
+      - "packages/model/**"
+      - "tests/cli/**"
+      - "tests/media/**"
+      - "tests/release/**"
+      - "tests/service/**"
+      - "tests/production-editorial.spec.ts"
+      - "tests/media.spec.ts"
+      - "tests/scale.spec.ts"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run build"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:media"
+      - "npm run test:oracle"
+      - "npm run test:e2e"
+      - "npm run test:performance"
+      - "npm run test:a11y"
+      - "npm run test:release"
+    stop_if:
+      - "Preview playback would consume mutable project state or diverge from render timeline semantics."
+      - "The browser must possess or exercise an agent credential to generate, claim, or submit external-agent work."
+      - "Service events reset focused controls, unsaved drafts, selections, or nested scroll positions."
+      - "The fresh oracle requires JSON, SQLite, or media manipulation outside documented browser and CLI actions."
+      - "A change would weaken human authority, atomic artifact publication, deterministic media probes, or existing migrations."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unresolved cause."
+    receipt:
+      result: done
+      changed_files:
+        - README.md
+        - package.json
+        - apps/cli/src/index.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - packages/api/src/index.ts
+        - packages/model/src/index.ts
+        - src/ProductionAssets.tsx
+        - src/ProductionEditorial.tsx
+        - src/ProductionIntake.tsx
+        - src/ProductionLedger.tsx
+        - src/ProductionMedia.tsx
+        - tests/cli/foundation.test.ts
+        - tests/media/media.test.ts
+        - tests/media.spec.ts
+        - tests/production-editorial.spec.ts
+        - tests/release/oracle.spec.ts
+        - tests/service/foundation.test.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run build"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+          detail: "9 passed"
+        - cmd: "npm run test:cli"
+          status: pass
+          detail: "4 passed"
+        - cmd: "npm run test:media"
+          status: pass
+          detail: "3 passed"
+        - cmd: "npm run test:oracle"
+          status: pass
+          detail: "API oracle 1 passed; browser plus executable CLI oracle 1 passed"
+        - cmd: "npm run test:e2e"
+          status: pass
+          detail: "23 passed"
+        - cmd: "npm run test:performance"
+          status: pass
+        - cmd: "npm run test:a11y"
+          status: pass
+        - cmd: "npm run test:release"
+          status: pass
+      oracle:
+        kind: "fresh Playwright browser plus spawned executable CLI"
+        workflow:
+          - "browser intake, deterministic transcription, and correction"
+          - "human task dispatch and external CLI attach, claim, and chronological proposal"
+          - "human acceptance, reorder, cut, checkpoint, undo, and restore"
+          - "human and CLI candidate attachment with human-only active selection"
+          - "revision-bound shot and assembled preview"
+          - "dual render, receipts and history"
+          - "service restart, browser reconnect, and CLI media parity"
+        artifacts:
+          - format: landscape
+            dimensions: 1920x1080
+            sha256: 7cdd26c1ed1724daa33f54b3360d27c6b77dd45ec12874a90cb09585e49003b9
+          - format: vertical
+            dimensions: 1080x1920
+            sha256: dde08cd1f13a47e20aac719b9ed4b86d2640638b31c68927680e67999f95649b
+      interaction_preservation:
+        - "External service events refresh proposal, ledger, asset, activity, and media state without browser-held agent credentials."
+        - "Tests preserve focused checkpoint draft value and selection range, selected shot, and nested candidate-tray scroll through live agent updates."
+        - "Media events invalidate and refresh stale preflight while preserving explicit human placeholder authority."
+      dirty_fingerprint:
+        sha256: bd4d478771afa9d6dd744697bb53553a63c19842e4bbe173b3f85c8775927c8c
+        scope: "Sorted SHA-256 manifest of release source, tests, operator docs, and root build configuration."
+      known_limitations:
+        - "V1 remains local-first, single-creator, and hard-cut only."
+        - "Recording, hosted collaboration, web search, generation providers, YouTube publishing, and mobile-native clients remain explicit non-goals."
+      summary: "Closed the final interaction gap. The browser now queues work without agent secrets; a spawned CLI attaches, claims, and submits it. Authenticated service events update shared state while preserving focus, drafts, selection, and nested scroll. Revision-checked shot and assembly previews reuse the immutable final-render plan. A fresh browser-plus-executable-CLI oracle covers intake through restart and semantically validated dual MP4s. All exact service, CLI, media, oracle, browser, scale, accessibility, build, diff, and consolidated release gates pass."
+  - id: T086
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Eliminate ProductionMedia's delayed self-event race while preserving genuine external-event invalidation and all stale-preflight authority."
+    inputs:
+      - "T999 second Judge audit"
+      - "ProductionMedia authenticated event subscription and format-save flow"
+      - "Current media browser test and consolidated release gate"
+    constraints:
+      - "Do not weaken external live refresh, revision checks, or preflight authority."
+      - "A delayed event for a locally confirmed revision must not overwrite that local outcome."
+      - "A later external revision must still invalidate and refresh preview/preflight state."
+    acceptance_criteria:
+      - "ProductionMedia tracks confirmed revisions so self-events are ignored before or after the local response without relying only on timing."
+      - "The format-save outcome remains observable after delayed event delivery."
+      - "A genuine later external mutation still produces the stale/live-refresh status and clears placeholder authorization."
+      - "The exact consolidated release gate passes repeatedly for the repaired fingerprint."
+    expected_output:
+      - "Deterministic media self-event suppression"
+      - "Delayed-echo and genuine-external-event browser regression proof"
+      - "Fresh release evidence and fingerprint"
+    allowed_files:
+      - "src/ProductionMedia.tsx"
+      - "tests/media.spec.ts"
+    verify:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run build"
+      - "npx playwright test tests/media.spec.ts --repeat-each=10"
+      - "npm run test:e2e"
+      - "npm run test:release"
+    stop_if:
+      - "The fix requires weakening event refresh, stale-revision/preflight authority, or existing interaction assertions."
+      - "Need files outside allowed_files."
+      - "The same exact release failure remains after two verified attempts."
+    receipt:
+      result: done
+      changed_files:
+        - src/ProductionMedia.tsx
+        - tests/media.spec.ts
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run build"
+          status: pass
+        - cmd: "npx playwright test tests/media.spec.ts --repeat-each=10"
+          status: pass
+          detail: "10 passed"
+        - cmd: "npm run test:e2e"
+          status: pass
+          detail: "23 passed"
+        - cmd: "npm run test:release"
+          status: pass
+          detail: "Uninterrupted consolidated release gate passed"
+      race_proof:
+        - "Pending, confirmed-local, deferred, and current revisions are tracked explicitly rather than inferred from response timing."
+        - "A self-event arriving before the response is deferred and then classified by the confirmed response revision."
+        - "A self-event arriving after the response is ignored as current or confirmed-local."
+        - "A greater genuine external revision still refreshes media, clears placeholder approval, and announces stale preflight."
+      dirty_fingerprint:
+        sha256: 79731046982c51c756ebf10c2fa4d36b29d1c11dffff92e690b872dfe39869a0
+        scope: "Sorted SHA-256 manifest of release source, tests, operator docs, and root build configuration."
+      summary: "Replaced timing-only media self-event suppression with explicit pending, confirmed-local, deferred, and current revision tracking. Delayed echoes can no longer overwrite a confirmed format-save outcome, while a later external revision still refreshes and invalidates preflight. The browser regression holds the save status for 750 ms, then proves genuine external invalidation. Ten repeated media journeys, 23 browser tests, and the uninterrupted consolidated release gate pass."
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit the release candidate against the full original Rant Studio V1 outcome and authorize completion only with oracle-level proof."
+    inputs:
+      - "All task receipts and any inserted repair receipts"
+      - "Approved design specification and Interactive Prototype Evidence"
+      - "Fresh full-oracle walkthrough output"
+      - "Dual-format MP4 artifacts and deterministic semantic checks"
+      - "Release, safety, media, accessibility, CLI, browser, and 150-shot gate results"
+      - "Current migrations, dirty diff, documentation, and known limitations"
+    constraints:
+      - "Read-only; do not implement."
+      - "Reject completion if any required Worker is queued, active, blocked without exhaustion, or weakly verified."
+      - "Reject completion if the browser and CLI do not share revision truth or if an agent can bypass human authority."
+      - "Reject completion if outputs merely exist without deterministic semantic validation."
+      - "Reject completion if the five-shot mock passes while production intake, persistence, recovery, media, or scale remains simulated."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Criterion-by-criterion evidence map"
+      - "Oracle walkthrough verdict"
+      - "Missing, stale, or weak evidence"
+      - "Exact next Worker task if not complete"
+    prior_audits:
+      - decision: not_complete
+        full_outcome_complete: false
+        rationale: "All owned gates passed, but production preview was metadata-only, browser code impersonated the external agent, external CLI changes required manual refresh, and the release oracle did not drive the browser through correction, cut/reorder, preview, undo, and restore."
+        required_repair: T085
+      - decision: not_complete
+        full_outcome_complete: false
+        rationale: "All ten product criteria passed, but a delayed authenticated self-event could nondeterministically overwrite the browser's confirmed media format-save outcome, so an uninterrupted consolidated release gate was not reliable."
+        required_repair: T086
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "Completion is proved at the exact audited fingerprint. Fresh verification reproduced 10/10 repeated media journeys, 23/23 browser tests, and one uninterrupted consolidated release run with every gate passing. Delayed local media echoes preserve confirmed outcomes while greater external revisions invalidate and refresh preflight. The browser-plus-executable-CLI oracle, deterministic media suite, restart, authority, safety, accessibility, and 150-shot gates map to all ten V1 criteria. No Worker remains queued or active."
+      criteria:
+        - id: 1
+          outcome: "Narration intake"
+          status: pass
+          evidence: "Fresh browser WAV upload plus managed-media persistence and safety gates."
+        - id: 2
+          outcome: "Word-timestamp transcript"
+          status: pass
+          evidence: "Browser deterministic transcription plus immutable provider, import, retry, and restart tests."
+        - id: 3
+          outcome: "Transcript correction"
+          status: pass
+          evidence: "Fresh browser correction with raw-word timing and lineage preservation."
+        - id: 4
+          outcome: "External-agent chronological proposal and human approval"
+          status: pass
+          evidence: "Spawned executable CLI attaches, claims, and submits; browser has no agent credential and human accepts."
+        - id: 5
+          outcome: "Cut and reorder"
+          status: pass
+          evidence: "Fresh browser reorder, undo, cut, restore plus stable-ID, ancestry, conflict, and restart gates."
+        - id: 6
+          outcome: "Human and agent candidates"
+          status: pass
+          evidence: "Browser PNG upload and executable-CLI explicit-target attachment with provenance and receipt."
+        - id: 7
+          outcome: "Human active-selection authority"
+          status: pass
+          evidence: "Browser selections and service-side denial of protected agent mutations."
+        - id: 8
+          outcome: "Shot and assembly preview"
+          status: pass
+          evidence: "Blob-backed immutable previews reuse final timeline semantics and reject stale revisions."
+        - id: 9
+          outcome: "Valid landscape and vertical MP4s"
+          status: pass
+          evidence: "ffprobe dimensions/audio/duration plus deterministic narration, visual, freeze, captions, framing, placeholder, and atomic-publication probes."
+        - id: 10
+          outcome: "Receipts, history, undo, and restore"
+          status: pass
+          evidence: "Fresh browser receipt/history inspection, checkpoint/undo/restore, and same-store restart parity."
+      verification:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "npx playwright test tests/media.spec.ts --repeat-each=10"
+          status: pass
+          detail: "10 passed"
+        - cmd: "npm run test:e2e"
+          status: pass
+          detail: "23 passed"
+        - cmd: "npm run test:release"
+          status: pass
+          detail: "Uninterrupted consolidated gate passed"
+      artifacts:
+        - format: landscape
+          dimensions: 1920x1080
+          sha256: 7cdd26c1ed1724daa33f54b3360d27c6b77dd45ec12874a90cb09585e49003b9
+        - format: vertical
+          dimensions: 1080x1920
+          sha256: dde08cd1f13a47e20aac719b9ed4b86d2640638b31c68927680e67999f95649b
+      dirty_fingerprint: "sha256:79731046982c51c756ebf10c2fa4d36b29d1c11dffff92e690b872dfe39869a0"
+      missing_evidence: []
+      summary: "Final Judge approved the complete Rant Studio V1 outcome. All ten criteria map to current browser, executable CLI, persistence, authority, live-event, deterministic media, restart, safety, accessibility, and 150-shot evidence. The exact fingerprint reproduces, the delayed-event regression passes 10/10, all 23 browser tests pass, and the consolidated release command completes uninterrupted."
+checks:
+  dirty_fingerprint: "sha256:79731046982c51c756ebf10c2fa4d36b29d1c11dffff92e690b872dfe39869a0"
+  dirty_fingerprint_scope: "Sorted SHA-256 manifest of README.md, root package/TypeScript/Vite/Playwright files, apps/**, packages/**, src/**, tests/**, and docs/operator/** after all T085 gates passed."
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "git diff --check"
+      - "npm run check"
+      - "npm run build"
+      - "npx playwright test tests/media.spec.ts --repeat-each=10"
+      - "npm run test:e2e (23 passed)"
+      - "npm run test:release (uninterrupted pass)"
+    fingerprint: "sha256:79731046982c51c756ebf10c2fa4d36b29d1c11dffff92e690b872dfe39869a0"

@@ -1,0 +1,334 @@
+# GoalBuddy v2 state.yaml
+
+version: 2
+
+goal:
+  title: "Rant Studio Interactive HTML Mock-up"
+  slug: "rant-studio-interactive-mockup"
+  kind: existing_plan
+  tranche: "Build and verify the complete interactive prototype through successive coherent UX slices."
+  status: done
+  oracle:
+    signal: "A locally served prototype passes automated checks and a browser walkthrough of every required mock state."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Receipts plus a final browser walkthrough map every required state and transition to the approved design."
+  intake:
+    original_request: "Plan and build the approved Rant Studio interactive HTML mock-up with GoalBuddy Prep and rigorous acceptance criteria."
+    interpreted_outcome: "A cohesive interactive TypeScript browser prototype validates the approved Rant Studio UX without production infrastructure."
+    input_shape: existing_plan
+    audience: "Rant Studio product owner"
+    authority: approved
+    proof_type: demo
+    completion_proof: "The prototype passes build/browser checks and the complete owner-facing walkthrough."
+    likely_misfire: "Producing disconnected pretty screens or implementing production systems instead of validating the UX."
+    blind_spots_considered:
+      - "Over-decomposed tasks that never yield a coherent prototype."
+      - "Interactions that reset or contradict project state."
+      - "Weak keyboard access or color-only statuses."
+      - "Starting real provider, rendering, database, or agent integrations."
+    existing_plan_facts:
+      - "Product truth is docs/superpowers/specs/2026-07-27-rant-studio-design.md."
+      - "The approved workspace is a full-width Shot Ledger."
+      - "The agent bridge is a selection-aware command dock."
+      - "The assembled preview opens on demand."
+      - "The prototype uses deterministic seeded data."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  exact_human_approval_can_terminal_wait: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/rant-studio-interactive-mockup/"
+    command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.1/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/rant-studio-interactive-mockup"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the approved design and GoalBuddy oracle, then specify the largest safe first mock-up Worker slice."
+    inputs:
+      - "docs/superpowers/specs/2026-07-27-rant-studio-design.md"
+      - "docs/goals/rant-studio-interactive-mockup/goal.md"
+    constraints:
+      - "Read-only."
+      - "Do not implement the mock-up."
+      - "Preserve the approved UX decisions."
+      - "Keep production backend, media, provider, database, and agent runtime work out of scope."
+    expected_output:
+      - "Oracle verdict"
+      - "Acceptance matrix for the first coherent UX slice"
+      - "Exact Worker objective"
+      - "Allowed files"
+      - "Verification commands"
+      - "Stop conditions"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "The oracle requires integrated automated and browser proof, so it cannot be satisfied by disconnected screens. The first Worker should implement the complete editorial transition from untouched transcript through staged proposal acceptance into the approved Shot Ledger. This is the largest safe coherent slice and stays entirely within deterministic prototype scope."
+      worker_package:
+        objective: "Build the editorial core prototype from raw transcript through staged shot proposal acceptance into the Shot Ledger."
+        allowed_files:
+          - package.json
+          - package-lock.json
+          - tsconfig.json
+          - tsconfig.app.json
+          - tsconfig.node.json
+          - vite.config.ts
+          - playwright.config.ts
+          - index.html
+          - src/
+          - public/
+          - tests/
+          - README.md
+        verify:
+          - "npm run check"
+          - "npm run build"
+          - "npm run test:e2e -- --grep \"editorial core\""
+        stop_if:
+          - "Implementation would contradict the approved design spec."
+          - "The slice requires real provider, backend, database, renderer, or agent integration."
+          - "Required files fall outside allowed_files."
+          - "The same verification failure remains unexplained after two focused attempts."
+      evidence:
+        - docs/superpowers/specs/2026-07-27-rant-studio-design.md
+        - docs/goals/rant-studio-interactive-mockup/goal.md
+        - docs/goals/rant-studio-interactive-mockup/notes/T001-judge-decision.md
+      blocked_tasks: []
+      missing_evidence:
+        - "No prototype implementation exists yet; T002 must produce it."
+      required_board_updates:
+        - "Record T001 done and activate T002 using the approved Worker package."
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Build the editorial core prototype from raw transcript through staged shot proposal acceptance into the Shot Ledger."
+    inputs:
+      - "T001 receipt and PM-applied task refinements"
+      - "docs/superpowers/specs/2026-07-27-rant-studio-design.md"
+      - "Approved consolidated Shot Ledger direction"
+    constraints:
+      - "Use deterministic seeded data and simulated async states."
+      - "Do not implement a backend, database, provider call, media renderer, agent runtime, or CLI."
+      - "Keep the raw transcript untouched until the explicit Propose shots action."
+      - "The proposal must remain staged until the human accepts it."
+      - "Implement one coherent browser app, not disconnected pages."
+    expected_output:
+      - "A locally runnable TypeScript prototype with project shell and seeded narration."
+      - "Raw transcript view with correctable text and visible correction state."
+      - "Propose shots flow with pacing presets and collapsed advanced controls."
+      - "Simulated attached-agent progress and a validated staged proposal."
+      - "Accept, reject, regenerate, and boundary-adjustment interactions."
+      - "Acceptance transitions atomically into the full-width two-column Shot Ledger."
+      - "Selected-shot state feeds the persistent command dock through explicit target chips."
+      - "Automated browser coverage for the editorial-core walkthrough."
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "tsconfig.app.json"
+      - "tsconfig.node.json"
+      - "vite.config.ts"
+      - "playwright.config.ts"
+      - "index.html"
+      - "src/App.tsx"
+      - "src/main.tsx"
+      - "src/styles.css"
+      - "tests/editorial-core.spec.ts"
+      - "README.md"
+    verify:
+      - "npm run check"
+      - "npm run build"
+      - "npm run test:e2e -- --grep \"editorial core\""
+    stop_if:
+      - "Implementation would contradict the approved design spec."
+      - "The slice requires real provider, backend, database, renderer, or agent integration."
+      - "Required files fall outside allowed_files."
+      - "The same verification failure remains unexplained after two focused attempts."
+    receipt:
+      result: done
+      changed_files:
+        - README.md
+        - index.html
+        - package-lock.json
+        - package.json
+        - playwright.config.ts
+        - src/App.tsx
+        - src/main.tsx
+        - src/styles.css
+        - tests/editorial-core.spec.ts
+        - tsconfig.app.json
+        - tsconfig.json
+        - tsconfig.node.json
+        - vite.config.ts
+      commands:
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run build"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep \"editorial core\""
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Built a cohesive TypeScript editorial prototype with an untouched timestamped transcript, correction state, pacing and advanced shot controls, simulated attached-agent progress, staged proposal review, boundary adjustment, reject/regenerate paths, atomic acceptance, the approved full-width Shot Ledger, and explicit command-dock target chips. Editorial browser tests were written first, observed failing, and now pass."
+      deviations:
+        - "The dedicated GoalBuddy Worker timed out without changes; the PM completed the same bounded Worker package as deterministic fallback."
+      remaining_blockers: []
+      verification_attempts: 2
+      stopped_because: null
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Complete the collaboration and output mock flow, then verify the integrated prototype as one product."
+    inputs:
+      - "T002 receipt"
+      - "The verified editorial-core prototype"
+      - "docs/superpowers/specs/2026-07-27-rant-studio-design.md"
+    constraints:
+      - "Preserve all verified T002 behavior."
+      - "Keep every integration deterministic and simulated."
+      - "Agents may add candidates and recommendations but must not change the active visual."
+      - "Preview remains on demand rather than occupying a permanent editor rail."
+      - "Use format-aware caption defaults: landscape off and vertical on."
+    expected_output:
+      - "Candidate trays support simulated upload, inspection, provenance, and human selection."
+      - "The agent dock creates an attributed task receipt and can add a candidate without selecting it."
+      - "Activity and History expose task receipts, proposals, changes, and checkpoints."
+      - "On-demand preview switches between 16:9 and 9:16 with separate framing and caption state."
+      - "Export preflight identifies a missing visual, shows placeholder behavior, and requires explicit export-anyway confirmation."
+      - "Primary walkthrough controls are keyboard-usable with visible focus and non-color-only statuses."
+      - "A deterministic reset returns the prototype to the walkthrough start."
+      - "The full automated browser oracle passes without console errors."
+    allowed_files:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "tsconfig.app.json"
+      - "tsconfig.node.json"
+      - "vite.config.ts"
+      - "playwright.config.ts"
+      - "index.html"
+      - "src/App.tsx"
+      - "src/main.tsx"
+      - "src/styles.css"
+      - "tests/editorial-core.spec.ts"
+      - "tests/collaboration-output.spec.ts"
+      - "README.md"
+    verify:
+      - "npm run check"
+      - "npm run build"
+      - "npm run test:e2e"
+    stop_if:
+      - "Implementation would contradict the approved design spec."
+      - "The slice requires production infrastructure or external credentials."
+      - "Required files fall outside allowed_files."
+      - "A T002 acceptance behavior regresses and cannot be restored in two focused attempts."
+      - "The same verification failure remains unexplained after two focused attempts."
+    receipt:
+      result: done
+      changed_files:
+        - README.md
+        - src/App.tsx
+        - src/styles.css
+        - tests/collaboration-output.spec.ts
+      commands:
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run build"
+          status: pass
+        - cmd: "npm run test:e2e"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Completed the integrated collaboration/output prototype: browser upload and provenance, human-only asset selection, additive agent candidate attachment with durable Activity receipt, linear History, on-demand dual-format preview with independent framing and caption defaults, export preflight with a human placeholder gate, simulated render results, visible keyboard focus, responsive layouts, and deterministic Reset demo. All four browser scenarios now pass without console errors."
+      deviations:
+        - "The dedicated GoalBuddy Worker timed out without creating its required test file; the PM completed the same bounded Worker package as deterministic fallback."
+      remaining_blockers: []
+      verification_attempts: 2
+      stopped_because: null
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit the complete interactive mock-up against the approved spec and the browser-walkthrough oracle."
+    inputs:
+      - "All completed task receipts"
+      - "Current prototype"
+      - "Last full verification"
+      - "docs/superpowers/specs/2026-07-27-rant-studio-design.md"
+    constraints:
+      - "Read-only."
+      - "Do not implement fixes."
+      - "Reject completion if any required mock state, transition, or authority rule is missing."
+      - "Reject completion if production infrastructure was added to satisfy a simulated-prototype requirement."
+      - "Reject completion if required Worker work remains queued, active, or unverified."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Acceptance matrix mapped to receipts and observed browser behavior"
+      - "Missing evidence"
+      - "Exact next Worker task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "The final PM audit maps both Worker receipts and a fresh live browser walkthrough to the complete oracle. The prototype begins raw, stages agent work before human acceptance, preserves human-only visual selection, records additive agent work, previews both formats with independent framing, gates incomplete export, resets deterministically, remains responsive, and produces no browser console errors. Type checking, production build, all four Playwright scenarios, and diff validation pass. No production infrastructure or required Worker work remains."
+      evidence:
+        - "T002: untouched transcript, correction, Standard pacing, collapsed advanced controls, staged proposal, boundary adjustment, reject/regenerate, atomic acceptance, and Shot Ledger"
+        - "T003: browser upload/provenance, human selection authority, additive agent candidate, Activity receipt, History checkpoint, on-demand preview, export authority gate, and deterministic reset"
+        - "Live browser: complete end-to-end walkthrough at http://127.0.0.1:4173/ with zero console errors"
+        - "Responsive browser: 390x844 viewport has no horizontal overflow and preserves the raw transcript workflow"
+        - "npm run check: pass"
+        - "npm run build: pass"
+        - "npm run test:e2e: 4 passed"
+        - "git diff --check: pass"
+        - "docs/superpowers/specs/2026-07-27-rant-studio-design.md"
+      blocked_tasks: []
+      missing_evidence: []
+      required_board_updates:
+        - "Mark T999 done, clear active_task, record the passing verification suite, and set goal.status to done."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "npm run check"
+      - "npm run build"
+      - "npm run test:e2e"
+      - "git diff --check"

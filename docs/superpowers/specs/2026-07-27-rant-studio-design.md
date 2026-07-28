@@ -511,6 +511,93 @@ overrides, missing-visual placeholders, and both aspect ratios.
 A 15-minute, 150-shot project verifies responsive windowed scrolling and proves
 that incoming agent and job events do not reset position or lose draft input.
 
+## Interactive Prototype Evidence
+
+The deterministic prototype is the interaction oracle for implementation
+planning. It is not the production architecture or domain model.
+
+Run it with `npm run dev` and open `http://rant-studio.localhost:4173/`.
+
+| Evidence | Reference | What it establishes |
+| --- | --- | --- |
+| Stateful workflow | [`src/App.tsx`](../../../src/App.tsx) | Raw transcript, staged proposal, accepted ledger, human/agent collaboration, preview, and export authority states |
+| Responsive layout | [`src/styles.css`](../../../src/styles.css) | Desktop ledger, reachable mobile navigation, bounded transcript cells, command dock, and modal presentation |
+| Editorial oracle | [`tests/editorial-core.spec.ts`](../../../tests/editorial-core.spec.ts) | Transcript preservation, staged acceptance, boundary review, rejection, and regeneration |
+| Collaboration oracle | [`tests/collaboration-output.spec.ts`](../../../tests/collaboration-output.spec.ts) | Human selection authority, agent task receipts, upload provenance, preview formats, export, and reset |
+| UX hardening oracle | [`tests/ux-hardening.spec.ts`](../../../tests/ux-hardening.spec.ts) | Long transcript containment, accepted-state fidelity, responsive navigation, focus management, cancellable fake work, dynamic preflight, and row-to-dock targeting |
+
+The prototype deliberately disables controls whose production behavior is not
+simulated. An enabled control must perform an observable transition; a disabled
+control is a visible planning marker, not evidence that its workflow is
+complete.
+
+### Prototype invariants to preserve
+
+- Corrected transcript text survives proposal review and acceptance.
+- A shared boundary update keeps adjacent shot endpoints contiguous.
+- Accepted pacing and timing appear unchanged in the Shot Ledger.
+- Long transcript chunks wrap and scroll inside bounded proposal and ledger
+  cells without introducing horizontal page overflow.
+- Project views and primary project actions remain reachable at narrow widths.
+- The mobile agent dock starts compact without hiding its target or status and
+  expands into the shared command surface on demand.
+- Candidate totals match the reachable asset controls in a bounded,
+  horizontally scrollable tray.
+- Dialogs are named, modal, Escape-closeable, focus-contained, and restore focus
+  to their opener.
+- Reset cancels in-flight work so stale callbacks cannot repopulate cleared
+  state.
+- Export headings, incomplete-shot lists, and authority confirmation copy derive
+  from one live source of truth.
+- Row-level agent actions explicitly target a shot and populate the shared agent
+  command surface.
+- Accepted proposal work and later agent work produce visible receipts.
+
+### Production gaps the implementation plan must carry
+
+The following are intentionally not satisfied by the five-shot prototype and
+must become explicit GoalBuddy tasks with their own acceptance criteria:
+
+1. Project creation, narration upload, transcription/import, validation, retry,
+   and provider configuration.
+2. Durable revisions, word-linked transcript corrections, stable shot IDs,
+   split/merge ancestry, protected proposals, checkpoints, and undo/restore.
+3. A 150-shot stress fixture with windowed ledger rendering, search, filtering,
+   completion summary, jump controls, and scroll/draft preservation during live
+   events.
+4. Long-transcript navigation with find/jump, chunked correction, and
+   word-timestamp integrity.
+5. Candidate trays that expose every candidate through bounded scrolling or
+   pagination while preserving selection, provenance, and position.
+6. Single- and multi-shot agent targeting, session selection, cancellable jobs,
+   stale-result guards, waiting/error/retry states, and durable receipts.
+7. Append-only, filterable Activity and History collections rather than the
+   prototype's compact in-memory examples.
+8. Preview state per shot and per output format, independent caption controls,
+   missing-visual placeholders, return-to-shot navigation, and real media
+   semantics.
+9. Revision-bound export preflight, dynamic warnings and blockers, placeholder
+   authorization, persistent render jobs, and atomic artifact publication.
+10. Browser and CLI contract tests proving both surfaces observe the same
+    revisions and that agents cannot apply protected human decisions.
+
+### GoalBuddy implementation-plan seed
+
+The next GoalBuddy Prep run should use this specification as the product
+contract and the prototype evidence table as its interaction oracle. Every
+implementation task should name:
+
+- the production boundary it owns;
+- the prototype state or test that demonstrates the intended interaction;
+- the production-only gaps it closes;
+- observable acceptance criteria, including error and stale-state behavior;
+- verification commands or fixtures; and
+- dependencies on prior schema, service, CLI, media, or browser work.
+
+The implementation board should not treat the completed mock-up board as an
+execution dependency. It should link to it as design evidence and create fresh
+tasks for the production system.
+
 ## Version-One Acceptance Criteria
 
 Version one is complete when a creator can:

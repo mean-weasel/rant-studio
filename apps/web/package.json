@@ -1,0 +1,6 @@
+{
+  "name": "@rant-studio/web",
+  "private": true,
+  "type": "module",
+  "exports": "./src/client.ts"
+}

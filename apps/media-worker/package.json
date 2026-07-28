@@ -1,0 +1,6 @@
+{
+  "name": "@rant-studio/media-worker",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts"
+}
