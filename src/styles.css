@@ -67,7 +67,7 @@ a:focus-visible {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 0.6;
 }
 
 .app-shell {
@@ -474,6 +474,7 @@ main {
   background: #111412;
 }
 
+a,
 .dock-task-status {
   margin: 7px 0 0;
   color: var(--mint);
@@ -2193,7 +2194,7 @@ main {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 36px 0 80px;
-  color: #201f1c;
+  color: var(--text);
 }
 
 .intake-hero,
@@ -2213,7 +2214,7 @@ main {
 
 .intake-hero p:not(.eyebrow) {
   max-width: 650px;
-  color: #67625a;
+  color: var(--muted);
 }
 
 .intake-grid {
@@ -2225,8 +2226,11 @@ main {
 
 .intake-card,
 .intake-project {
+  --orange: #8a451a;
+
   border: 1px solid #d9d4ca;
   border-radius: 14px;
+  color: #201f1c;
   background: #fffdf8;
   box-shadow: 0 12px 36px rgb(45 40 31 / 8%);
   padding: 22px;
@@ -2905,7 +2909,7 @@ main {
 .intake-status {
   min-height: 24px;
   margin: 0 0 18px;
-  color: #65542b;
+  color: var(--yellow);
   font-weight: 650;
 }
 

@@ -2,11 +2,31 @@ import { lstat, readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 
 import { RantClient, RantApiError } from '../../../packages/api/src/index.ts';
+import {
+  parseProposalJson,
+  planningContext,
+  readProposalSubmission,
+} from './semantic-planning.ts';
 
 type CliContext = {
   baseUrl: string;
-  credential: string;
+  credential?: string;
+  readSecret?: (input: { prompt: string; stdin: boolean }) => Promise<string>;
   write: (line: string) => void;
+};
+
+type ProviderName = 'groq' | 'openai';
+
+type ProviderSnapshot = {
+  activeProvider: 'deterministic' | ProviderName;
+  activeSource: 'deterministic' | 'environment' | 'keychain';
+  providers: Array<{
+    configured: boolean;
+    provider: ProviderName;
+    selected: boolean;
+    source: 'environment' | 'keychain' | null;
+    status: 'configured' | 'invalid' | 'missing' | 'valid';
+  }>;
 };
 
 function option(args: string[], name: string): string | undefined {
@@ -14,11 +34,61 @@ function option(args: string[], name: string): string | undefined {
   return index === -1 ? undefined : args[index + 1];
 }
 
+function providerName(value: string | undefined): ProviderName {
+  if (value === 'openai' || value === 'groq') return value;
+  throw new Error('Provider must be openai or groq');
+}
+
+function providerOutput(
+  snapshot: ProviderSnapshot,
+  jsonOutput: boolean,
+): string {
+  if (jsonOutput) return JSON.stringify(snapshot);
+  return [
+    `Active transcription: ${snapshot.activeProvider} (${snapshot.activeSource})`,
+    ...snapshot.providers.map(
+      (provider) =>
+        `${provider.provider}: ${provider.status}` +
+        `${provider.selected ? ' · selected' : ''}` +
+        `${provider.source ? ` · ${provider.source}` : ''}`,
+    ),
+  ].join('\n');
+}
+
+async function providerRequest(
+  context: CliContext,
+  path: string,
+  init: RequestInit = {},
+): Promise<ProviderSnapshot> {
+  const response = await fetch(`${context.baseUrl.replace(/\/$/, '')}${path}`, {
+    ...init,
+    headers: {
+      ...(context.credential
+        ? { authorization: `Bearer ${context.credential}` }
+        : {}),
+      'content-type': 'application/json',
+      ...init.headers,
+    },
+  });
+  const payload = (await response.json()) as
+    ProviderSnapshot | { error?: { code?: string; message?: string } };
+  if (!response.ok) {
+    const error = 'error' in payload ? payload.error : undefined;
+    throw new RantApiError(
+      error?.code ?? 'API_ERROR',
+      error?.message ?? `Provider request failed with HTTP ${response.status}`,
+      response.status,
+    );
+  }
+  return payload as ProviderSnapshot;
+}
+
 const help = `Rant Studio agent CLI
 
 Connection:
-  Set RANT_STUDIO_URL and RANT_STUDIO_CREDENTIAL to the loopback values
-  printed by npm run service. Agent credentials cannot perform human approvals.
+  Set RANT_STUDIO_URL to the loopback value printed by npm run service.
+  Local owner commands need no credential. External agents must also set the
+  printed RANT_STUDIO_CREDENTIAL; agent credentials cannot perform approvals.
 
 Read shared state:
   rant project get|intake|editorial|ledger|assets|activity|media <project>
@@ -28,13 +98,25 @@ Agent work:
   rant task claim <project> <task> --session <session>
   rant task transition <project> <task> --revision <n> --status <state>
        --idempotency <key> [--summary <text>]
+  rant proposal context <project> <task>
   rant proposal submit <project> <task> --revision <n>
-       --transcript <revision-id> --shots-json <json>
-  rant proposal submit-chronological <project> <task> --shots <count>
+       --transcript <revision-id> (--shots-file <json-file> | --shots-json <json>)
   rant asset attach <project> --revision <n> --shots <id,id>
        --file <png-or-mp4> [--task <task>]
   rant asset recommend <project> --revision <n> --shot <id>
        --asset <id> --reason <text>
+
+Transcription providers:
+  rant provider list [--json]
+  rant provider configure openai|groq [--stdin] [--no-select] [--json]
+  rant provider test openai|groq [--json]
+  rant provider select openai|groq [--json]
+  rant provider remove openai|groq [--json]
+
+  Configure reads the key from a hidden prompt. --stdin reads it from standard
+  input for automation. Raw keys are never accepted as command arguments.
+  Local owner commands may change providers. Agent credentials may only list
+  provider readiness.
 
 Recovery:
   Refresh the project and retry with the current revision after REVISION_CONFLICT.
@@ -52,6 +134,64 @@ export async function runCli(
   try {
     if (args.length === 0 || args[0] === 'help' || args[0] === '--help') {
       context.write(help);
+      return 0;
+    }
+    if (args[0] === 'provider' && args[1] === 'list') {
+      const snapshot = await providerRequest(
+        context,
+        '/v1/transcription-providers',
+      );
+      context.write(providerOutput(snapshot, args.includes('--json')));
+      return 0;
+    }
+    if (args[0] === 'provider' && args[1] === 'configure') {
+      const provider = providerName(args[2]);
+      if (
+        args.includes('--key') ||
+        args.includes('--secret') ||
+        args.includes('--credential')
+      ) {
+        throw new Error(
+          'Raw provider credentials are not accepted as command arguments',
+        );
+      }
+      if (!context.readSecret) {
+        throw new Error('Secure credential input is unavailable');
+      }
+      const credential = await context.readSecret({
+        prompt: `${provider} API key: `,
+        stdin: args.includes('--stdin'),
+      });
+      if (!credential.trim())
+        throw new Error('Provider credential is required');
+      const snapshot = await providerRequest(
+        context,
+        `/v1/transcription-providers/${provider}/credential`,
+        {
+          body: JSON.stringify({
+            credential,
+            select: !args.includes('--no-select'),
+          }),
+          method: 'PUT',
+        },
+      );
+      context.write(providerOutput(snapshot, args.includes('--json')));
+      return 0;
+    }
+    if (
+      args[0] === 'provider' &&
+      (args[1] === 'test' || args[1] === 'select' || args[1] === 'remove')
+    ) {
+      const provider = providerName(args[2]);
+      const action = args[1];
+      const snapshot = await providerRequest(
+        context,
+        `/v1/transcription-providers/${provider}/${
+          action === 'remove' ? 'credential' : action
+        }`,
+        { method: action === 'remove' ? 'DELETE' : 'POST' },
+      );
+      context.write(providerOutput(snapshot, args.includes('--json')));
       return 0;
     }
     if (args[0] === 'project' && args[1] === 'get' && args[2]) {
@@ -177,63 +317,46 @@ export async function runCli(
       );
       return 0;
     }
-    if (args[0] === 'proposal' && args[1] === 'submit' && args[2] && args[3]) {
-      const revision = Number(option(args, '--revision'));
-      const transcript = option(args, '--transcript');
-      const shotsJson = option(args, '--shots-json');
-      if (!Number.isInteger(revision) || !transcript || !shotsJson) {
-        throw new Error(
-          'proposal submit requires --revision, --transcript, and --shots-json',
-        );
-      }
-      const shots = JSON.parse(shotsJson) as Array<{
-        endWordOrdinal: number;
-        rationale: string;
-        startWordOrdinal: number;
-        theme: string;
-      }>;
+    if (args[0] === 'proposal' && args[1] === 'context' && args[2] && args[3]) {
+      const [editorial, activity] = await Promise.all([
+        client.getEditorial(args[2]),
+        client.getActivity(args[2]),
+      ]);
       context.write(
         JSON.stringify(
-          await client.submitShotProposal(args[2], args[3], {
-            baseProjectRevision: revision,
-            baseTranscriptRevisionId: transcript,
-            shots,
+          planningContext({
+            activity,
+            editorial,
+            projectId: args[2],
+            taskId: args[3],
           }),
         ),
       );
       return 0;
     }
-    if (
-      args[0] === 'proposal' &&
-      args[1] === 'submit-chronological' &&
-      args[2] &&
-      args[3]
-    ) {
-      const shotCount = Number(option(args, '--shots'));
-      if (!Number.isInteger(shotCount) || shotCount < 1) {
+    if (args[0] === 'proposal' && args[1] === 'submit' && args[2] && args[3]) {
+      const revision = Number(option(args, '--revision'));
+      const transcript = option(args, '--transcript');
+      const shotsJson = option(args, '--shots-json');
+      const shotsFile = option(args, '--shots-file');
+      if (
+        !Number.isInteger(revision) ||
+        !transcript ||
+        Boolean(shotsJson) === Boolean(shotsFile)
+      ) {
         throw new Error(
-          'proposal submit-chronological requires --shots <positive-count>',
+          'proposal submit requires --revision, --transcript, and exactly one of --shots-file or --shots-json',
         );
       }
-      const editorial = await client.getEditorial(args[2]);
-      const words = editorial.effectiveTranscript.words;
-      const count = Math.min(shotCount, words.length);
-      if (count < 1) throw new Error('the project transcript has no words');
-      const shots = Array.from({ length: count }, (_, index) => ({
-        endWordOrdinal:
-          index === count - 1
-            ? words.length - 1
-            : Math.floor(((index + 1) * words.length) / count) - 1,
-        rationale: `Keep chronological beat ${index + 1} together.`,
-        startWordOrdinal: Math.floor((index * words.length) / count),
-        theme: `Beat ${index + 1}`,
-      }));
+      const submission = shotsFile
+        ? await readProposalSubmission(shotsFile)
+        : parseProposalJson(shotsJson!);
       context.write(
         JSON.stringify(
           await client.submitShotProposal(args[2], args[3], {
-            baseProjectRevision: editorial.revision,
-            baseTranscriptRevisionId: editorial.effectiveTranscript.id,
-            shots,
+            baseProjectRevision: revision,
+            baseTranscriptRevisionId: transcript,
+            ...submission,
           }),
         ),
       );

@@ -1,0 +1,696 @@
+version: 2
+
+goal:
+  title: "Semantic Shot Planning"
+  slug: semantic-shot-planning
+  kind: specific
+  tranche: "Complete and verify the full local dual-mode semantic shot-planning workflow."
+  status: done
+  oracle:
+    signal: "Both external-agent planning modes complete on the 10m17s / 1,463-word QA transcript with useful semantic boundaries, exact chronological word coverage, staged human review, and restart persistence."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing model, service, CLI, browser, and oracle tests plus receipt-backed manual browser/CLI walkthroughs of both modes on the real QA transcript and two deterministic fixtures."
+  intake:
+    original_request: "Plan semantic shot organization now."
+    interpreted_outcome: "Build and verify an external-agent workflow that either discovers semantic shots or maps a transcript to a creator-supplied outline."
+    input_shape: specific
+    audience: "Local commentary-video creators and attached CLI agents"
+    authority: requested
+    proof_type: demo
+    completion_proof: "The real 10m17s transcript and two fixtures pass structural verification, and human review confirms useful semantic themes and boundaries in both planning modes."
+    likely_misfire: "Relabeling equal chronological chunks with plausible themes while leaving boundaries non-semantic."
+    blind_spots_considered:
+      - "External-agent ownership versus an accidental built-in-provider dependency"
+      - "Semantic usefulness versus structural coverage alone"
+      - "Soft target count versus mandatory equal partitioning"
+      - "Directed-mode input shape and agent-visible context"
+      - "Long transcript-chunk readability in the review UX"
+      - "Revision staleness, idempotency, persistence, and raw transcript immutability"
+      - "Narration cuts remaining a separate explicit human action"
+      - "Credential leakage through prompts, task payloads, logs, or receipts"
+    existing_plan_facts:
+      - "Current QA baseline creates three generic equal chunks."
+      - "Default starting count is three, treated as a soft target."
+      - "Advanced constraints may bound count or duration."
+      - "Directed mode accepts free-form direction plus optional ordered shot briefs."
+      - "Every corrected transcript word must appear exactly once in chronological order."
+      - "Agent proposals are staged for explicit human review before acceptance."
+      - "The external CLI agent, not a built-in LLM provider, supplies semantic judgment."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  exact_human_approval_can_terminal_wait: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/semantic-shot-planning/"
+    command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.1/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal /Users/neonwatty/Desktop/rant-studio/docs/goals/semantic-shot-planning"
+
+active_task: null
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: low
+    objective: "Map the existing shot-proposal, transcript, task, revision, persistence, browser, and CLI contracts; locate the current equal-chunk behavior; and identify the exact files and checks needed for a dual-mode semantic-planning slice."
+    inputs:
+      - "src"
+      - "apps/cli"
+      - "apps/service"
+      - "packages/api"
+      - "packages/model"
+      - "tests"
+      - "package.json"
+      - "Current QA evidence: 10m17s, 1,463 words, accepted revision 4, and generic Beat 1/2/3 equal-chunk output"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation or GoalBuddy control files."
+      - "Preserve the current dirty worktree and distinguish existing user changes from required work."
+      - "Prefer exact file paths, symbols, contracts, and verification commands over generic advice."
+    expected_output:
+      - "Evidence-backed file, data-flow, and persistence map"
+      - "Current equal-chunk behavior and semantic-planning extension points"
+      - "Exact verification baseline"
+      - "Risks, ambiguities, and candidate largest safe vertical slice"
+    receipt:
+      result: done
+      summary: "The production stack already enforces exact chronological coverage, staged human acceptance, raw-transcript immutability, stale revision rejection, stable accepted shot IDs, persistence, and browser/CLI shared state. The semantic gap is isolated: ProductionEditorial queues only a count/pacing instruction; ActivitySnapshot omits planning constraints; the CLI helper deliberately divides words into equal Beat N chunks. The largest safe slice is to make planning mode and constraints first-class in existing task snapshots, add dual-mode browser inputs and CLI planning-context/output commands, retain arbitrary agent-authored proposal submission, and expand service/CLI/browser tests without adding a model provider."
+      evidence:
+        - "src/ProductionEditorial.tsx:21"
+        - "src/ProductionEditorial.tsx:82"
+        - "src/ProductionEditorial.tsx:233"
+        - "src/ProductionEditorial.tsx:273"
+        - "src/styles.css:2348"
+        - "src/styles.css:2384"
+        - "packages/model/src/index.ts:69"
+        - "packages/model/src/index.ts:145"
+        - "packages/api/src/index.ts:167"
+        - "packages/api/src/index.ts:202"
+        - "apps/cli/src/index.ts:96"
+        - "apps/cli/src/index.ts:315"
+        - "apps/cli/src/index.ts:342"
+        - "apps/service/src/migrations.ts:143"
+        - "apps/service/src/migrations.ts:240"
+        - "apps/service/src/migrations.ts:274"
+        - "apps/service/src/store.ts:977"
+        - "apps/service/src/store.ts:1091"
+        - "apps/service/src/store.ts:1219"
+        - "apps/service/src/store.ts:3299"
+        - "apps/service/src/store.ts:3443"
+        - "tests/service/editorial.test.ts:73"
+        - "tests/cli/foundation.test.ts:310"
+        - "tests/production-editorial.spec.ts:76"
+        - "tests/ux-hardening.spec.ts:23"
+      facts:
+        - "ProductionEditorial currently queues constraints {targetShotCount} and a generic chronological instruction; it has no discover-versus-outline mode or creator direction inputs."
+        - "The equal-third behavior exists only in CLI proposal submit-chronological, which computes boundaries by word count and emits Beat N themes and generic rationales."
+        - "The generic proposal submit command already accepts arbitrary agent-authored start/end ordinals, themes, and rationales."
+        - "Store submission and adjustment reject gaps, overlaps, out-of-range spans, missing labels, and incomplete final coverage."
+        - "Acceptance rechecks project and transcript revisions, stages proposals before human acceptance, creates new stable shot IDs, and persists through SQLite."
+        - "ActivitySnapshot exposes task kind, instruction, revision, targets, and status but not pacing or constraints, so a CLI agent cannot inspect planning mode, target, advanced bounds, or ordered briefs from the task surface."
+        - "The browser review already renders transcript chunks in a dedicated column and bounds them with max-height scrolling."
+        - "Baseline passes: npm run test:model, npm run test:service, npm run test:cli, and npm run check."
+      contradictions:
+        - "The planned UX says the shot count is a soft target, but the current browser instruction says Create N shots and the equal-chunk helper treats N as exact."
+        - "The plan requires task-identical context for browser and CLI, but current task/activity projections omit stored pacing and constraints."
+      ambiguity_requiring_judge:
+        - "Whether to extend ActivitySnapshot tasks with typed planning context or add a separate proposal-task context endpoint; the former is smaller and keeps one canonical task surface."
+        - "Whether the legacy submit-chronological helper should be removed, renamed as an explicit fixture-only fallback, or retained with a warning so it cannot masquerade as semantic planning."
+      commands:
+        - "npm run test:model (pass)"
+        - "npm run test:service (pass)"
+        - "npm run test:cli (pass)"
+        - "npm run check (pass)"
+      note_needed: false
+      harness: codex
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review T001 and select the largest safe compatible dual-mode implementation slice, with an explicit contract boundary between deterministic product behavior and external-agent semantic judgment."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle and acceptance criteria in goal.md"
+    constraints:
+      - "Do not implement."
+      - "Reject any design that embeds a built-in model-provider planning call in this tranche."
+      - "Require exact coverage, revision-safe staging, raw transcript immutability, and no automatic narration cuts."
+      - "Specify exact allowed_files, verify commands, and stop conditions for T003; narrow the seeded scope where evidence permits."
+    expected_output:
+      - "Architecture decision and contract"
+      - "Exact T003 Worker objective"
+      - "Exact allowed_files"
+      - "Exact verify commands"
+      - "Stop conditions and deferred work"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Approve one full vertical slice using the existing SQLite task and proposal-operation records. Deterministic product code owns typed planning context, task/revision binding, outline-brief ordering, exact word coverage, stable staged shot IDs, soft-target deviation requirements, persistence, and human authority. The external CLI agent alone owns semantic interpretation and boundary/theme creation. Expose a planning-context CLI command and file-based proposal submission; remove the equal-chunk helper from the supported semantic path. Persist proposal-level explanations as proposal operations, avoiding a schema migration and preserving existing projects."
+      worker_package:
+        objective: "Implement the complete dual-mode external-agent semantic shot-planning vertical slice: typed shared planning contracts; discover and map-to-outline browser controls with soft target and advanced duration/word constraints; revision-bound task context visible through ActivitySnapshot and a CLI planning-context command; arbitrary file-based semantic proposal submission with stable staged shot IDs, optional visual briefs, outline-brief mapping, and required target-deviation explanation; exact-coverage and stale-state enforcement; staged scrollable human review and acceptance/rejection persistence; removal of the equal-chunk helper from the supported semantic path; and focused model/service/CLI/browser tests."
+        allowed_files:
+          - packages/model/src/index.ts
+          - packages/model/src/semantic-planning.ts
+          - packages/api/src/index.ts
+          - apps/service/src/store.ts
+          - apps/service/src/semantic-planning.ts
+          - apps/cli/src/index.ts
+          - apps/cli/src/semantic-planning.ts
+          - src/ProductionEditorial.tsx
+          - src/ShotPlanningControls.tsx
+          - src/styles.css
+          - tests/model/semantic-planning.test.ts
+          - tests/service/editorial.test.ts
+          - tests/service/semantic-planning.test.ts
+          - tests/cli/foundation.test.ts
+          - tests/cli/semantic-planning.test.ts
+          - tests/production-editorial.spec.ts
+          - tests/semantic-shot-planning.spec.ts
+          - docs/operator/README.md
+        verify:
+          - "npm run test:model"
+          - "npm run test:service"
+          - "npm run test:cli"
+          - "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+          - "npm run check:max-lines"
+          - "npm run check"
+        stop_if:
+          - "A required change falls outside the approved files."
+          - "The design would invoke a built-in model or transcription provider for semantic planning."
+          - "Existing persisted task/proposal records cannot be read compatibly without a destructive migration."
+          - "The implementation would mutate the raw transcript or create narration cuts."
+          - "Outline briefs cannot be mapped and validated without silently guessing a different contract."
+          - "The same verification failure persists after two evidence-based repair attempts."
+      evidence:
+        - "T001 receipt"
+        - "packages/model/src/index.ts:69"
+        - "packages/model/src/index.ts:145"
+        - "apps/service/src/store.ts:977"
+        - "apps/service/src/store.ts:1091"
+        - "apps/service/src/store.ts:1219"
+        - "apps/service/src/store.ts:3299"
+        - "apps/service/src/store.ts:3443"
+        - "apps/cli/src/index.ts:315"
+        - "apps/cli/src/index.ts:342"
+        - "src/ProductionEditorial.tsx:82"
+        - "src/ProductionEditorial.tsx:233"
+        - "src/styles.css:2384"
+      subgoal_contract: null
+      parallel_safety: null
+      blocked_tasks: []
+      missing_evidence:
+        - "Implementation and oracle proof remain outstanding."
+      required_board_updates:
+        - "Replace T003 objective, allowed_files, verify, and stop_if with this worker_package."
+        - "Activate T003 after recording this receipt."
+      harness: codex
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the complete dual-mode external-agent semantic shot-planning vertical slice: typed shared planning contracts; discover and map-to-outline browser controls with soft target and advanced duration/word constraints; revision-bound task context visible through ActivitySnapshot and a CLI planning-context command; arbitrary file-based semantic proposal submission with stable staged shot IDs, optional visual briefs, outline-brief mapping, and required target-deviation explanation; exact-coverage and stale-state enforcement; staged scrollable human review and acceptance/rejection persistence; removal of the equal-chunk helper from the supported semantic path; and focused model/service/CLI/browser tests."
+    inputs:
+      - "T002 receipt"
+      - "Goal oracle and acceptance criteria in goal.md"
+    allowed_files:
+      - "packages/model/src/index.ts"
+      - "packages/model/src/semantic-planning.ts"
+      - "packages/api/src/index.ts"
+      - "apps/service/src/store.ts"
+      - "apps/service/src/semantic-planning.ts"
+      - "apps/cli/src/index.ts"
+      - "apps/cli/src/semantic-planning.ts"
+      - "src/ProductionEditorial.tsx"
+      - "src/ShotPlanningControls.tsx"
+      - "src/styles.css"
+      - "tests/model/semantic-planning.test.ts"
+      - "tests/service/editorial.test.ts"
+      - "tests/service/semantic-planning.test.ts"
+      - "tests/cli/foundation.test.ts"
+      - "tests/cli/semantic-planning.test.ts"
+      - "tests/production-editorial.spec.ts"
+      - "tests/semantic-shot-planning.spec.ts"
+      - "docs/operator/README.md"
+    verify:
+      - "npm run test:model"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+      - "npm run check:max-lines"
+      - "npm run check"
+    stop_if:
+      - "A required change falls outside the approved files."
+      - "The design would invoke a built-in model or transcription provider for semantic planning."
+      - "Existing persisted task/proposal records cannot be read compatibly without a destructive migration."
+      - "The implementation would mutate the raw transcript or create narration cuts."
+      - "Outline briefs cannot be mapped and validated without silently guessing a different contract."
+      - "The same verification failure persists after two evidence-based repair attempts."
+    receipt:
+      result: done
+      changed_files:
+        - packages/model/src/index.ts
+        - packages/model/src/semantic-planning.ts
+        - packages/api/src/index.ts
+        - apps/service/src/store.ts
+        - apps/service/src/semantic-planning.ts
+        - apps/cli/src/index.ts
+        - apps/cli/src/semantic-planning.ts
+        - src/ProductionEditorial.tsx
+        - src/ShotPlanningControls.tsx
+        - src/styles.css
+        - tests/model/semantic-planning.test.ts
+        - tests/service/editorial.test.ts
+        - tests/cli/foundation.test.ts
+        - tests/semantic-shot-planning.spec.ts
+      commands:
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+          status: pass
+        - cmd: "npm run check:max-lines"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Implemented the dual-mode browser/CLI semantic planning slice. Browser users can discover structure or map an outline, provide direction and ordered briefs, set a soft target and advanced constraints, and review scrollable staged chunks. CLI agents can retrieve full revision-bound context and submit proposal files. Service validation enforces exact coverage, outline order, advanced bounds, deviation explanations, stable staged-to-ledger IDs, stale-state safety, raw transcript immutability, and restart persistence. The equal-chunk semantic shortcut was removed. Focused model, service, CLI, and browser tests pass."
+      deviations:
+        - "The dedicated GoalBuddy Worker timed out before producing changes, so the PM completed the exact Judge-approved package as the allowed fallback."
+        - "Proposal metadata uses the existing proposal_operations log and the API's backward-compatible shot payload bridge, avoiding a database migration or out-of-scope server edit."
+      remaining_blockers: []
+      verification_attempts: 2
+      stopped_because: null
+      harness: codex
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit the completed vertical slice for semantic-task usability, exact coverage, revision and persistence safety, secret handling, long-transcript UX, and oracle reachability; identify one coherent hardening package if needed."
+    inputs:
+      - "T001 through T003 receipts"
+      - "T003 diff and verification results"
+      - "Goal oracle and acceptance criteria in goal.md"
+    constraints:
+      - "Do not implement."
+      - "Do not accept generic labels or equal segmentation as semantic proof."
+      - "Choose one coherent hardening package rather than a list of tiny repairs."
+    expected_output:
+      - "pass | needs_hardening"
+      - "Acceptance-criteria coverage map"
+      - "Exact T005 objective, allowed_files, verify commands, and stop conditions if needed"
+    receipt:
+      result: done
+      decision: not_complete
+      full_outcome_complete: false
+      rationale: "The vertical slice reaches both modes and covers AC1-7 and most of AC8-10, but one coherent trust-boundary hardening package is required. Submission currently compares the supplied revision to the task but not the live project revision; human boundary adjustment validates the old transcript without first marking a now-stale proposal. Agent-provided stable IDs are unique but not format/collision checked before acceptance. The new semantic helper also fails lint, and brief-derived shot targets remain editable. These are bounded repairs; the real 10m17s semantic oracle still follows in T006."
+      worker_package:
+        objective: "Harden the semantic-planning trust boundary and UX as one package: reject proposal submission when the live project revision differs from the task base; reject and mark stale any adjustment against a superseded project or transcript; validate staged shot IDs as UUIDs and reject collisions with accepted shots before staging; remove the semantic-helper lint errors without weakening metadata handling; disable brief-derived target editing and prevent invalid target counts in the browser; add service and browser regressions; then run the full quality and focused semantic suites."
+        allowed_files:
+          - apps/service/src/store.ts
+          - apps/service/src/semantic-planning.ts
+          - src/ShotPlanningControls.tsx
+          - tests/service/editorial.test.ts
+          - tests/semantic-shot-planning.spec.ts
+        verify:
+          - "npm run test:model"
+          - "npm run test:service"
+          - "npm run test:cli"
+          - "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+          - "npm run quality"
+          - "git diff --check"
+        stop_if:
+          - "A required repair falls outside the approved files."
+          - "A fix would weaken exact coverage, human authority, raw transcript immutability, or external-agent-only semantics."
+          - "Persisted legacy proposals cannot be read safely without a destructive migration."
+          - "The same verification failure persists after two evidence-based repair attempts."
+      evidence:
+        - "AC1-3: src/ShotPlanningControls.tsx and tests/semantic-shot-planning.spec.ts prove discover/outline modes, soft target, advanced bounds, direction, and ordered briefs."
+        - "AC4: apps/cli/src/semantic-planning.ts exposes full revision-bound task and transcript context."
+        - "AC5-7: apps/service/src/semantic-planning.ts and store.ts enforce semantic proposal shape, exact coverage, stable staged IDs, raw transcript preservation, and no narration cuts."
+        - "AC8-9: production review chunks are scrollable; acceptance/rejection and restart persistence pass focused browser and service tests."
+        - "AC10 partial: model/service/CLI/focused browser suites pass; real 10m17s human semantic review remains outstanding."
+        - "npm run format:check passed."
+        - "npm run knip:production passed."
+        - "npm run quality reached lint and found two new no-unused-vars errors plus pre-existing warnings."
+      subgoal_contract: null
+      parallel_safety: null
+      blocked_tasks: []
+      missing_evidence:
+        - "Fresh green full quality after trust-boundary repairs."
+        - "Real 10m17s discover and outline walkthrough with human semantic-quality verdict."
+      required_board_updates:
+        - "Replace T005 with this worker_package and activate it."
+        - "Keep T006 queued for the real oracle run."
+      harness: codex
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Harden the semantic-planning trust boundary and UX as one package: reject proposal submission when the live project revision differs from the task base; reject and mark stale any adjustment against a superseded project or transcript; validate staged shot IDs as UUIDs and reject collisions with accepted shots before staging; remove the semantic-helper lint errors without weakening metadata handling; disable brief-derived target editing and prevent invalid target counts in the browser; add service and browser regressions; then run the full quality and focused semantic suites."
+    inputs:
+      - "T004 receipt"
+      - "Goal oracle and acceptance criteria in goal.md"
+    allowed_files:
+      - "apps/service/src/store.ts"
+      - "apps/service/src/semantic-planning.ts"
+      - "src/ShotPlanningControls.tsx"
+      - "tests/service/editorial.test.ts"
+      - "tests/semantic-shot-planning.spec.ts"
+    verify:
+      - "npm run test:model"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+      - "npm run quality"
+      - "git diff --check"
+    stop_if:
+      - "A required repair falls outside the approved files."
+      - "A fix would weaken exact coverage, human authority, raw transcript immutability, or external-agent-only semantics."
+      - "Persisted legacy proposals cannot be read safely without a destructive migration."
+      - "The same verification failure persists after two evidence-based repair attempts."
+    receipt:
+      result: done
+      summary: "Hardened the semantic-planning trust boundary and browser controls. Submission now rejects a task whose live project revision has advanced even when the transcript is unchanged. Adjustment marks and rejects proposals whose project or transcript base is stale. Staged IDs must be unique UUIDs and cannot collide with accepted shots. Outline-derived targets are locked, impossible manual targets cannot queue, and focused regressions cover every new invariant."
+      changed_files:
+        - apps/service/src/store.ts
+        - apps/service/src/semantic-planning.ts
+        - src/ShotPlanningControls.tsx
+        - tests/service/editorial.test.ts
+        - tests/semantic-shot-planning.spec.ts
+      commands:
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+          status: pass
+        - cmd: "npm run quality"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      evidence:
+        - "tests/service/editorial.test.ts rejects and marks stale adjustment after transcript correction."
+        - "tests/service/editorial.test.ts rejects submission after add_note advances only the project revision."
+        - "tests/service/editorial.test.ts rejects malformed UUIDs and accepted-shot ID reuse."
+        - "tests/semantic-shot-planning.spec.ts proves impossible targets disable queueing and ordered briefs lock their derived count."
+        - "apps/service/src/store.ts remains under its 3,548-line ratchet."
+        - "No raw transcript mutation, narration cut, destructive migration, or built-in semantic model was introduced."
+      deviations:
+        - "The dedicated GoalBuddy Worker timed out before producing changes, so the PM completed the exact Judge-approved package as the allowed fallback."
+        - "The first service rerun exposed a test assertion that assumed the accepted task remained tasks[0]; it was corrected to select the task by ID."
+        - "The first full quality rerun found two now-internal semantic helper exports; removing their export modifiers made knip green without changing behavior."
+      remaining_blockers: []
+      verification_attempts: 2
+      stopped_because: null
+      harness: codex
+  - id: T006
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Run and record the end-to-end oracle: both planning modes through browser and attached CLI agent on the real 10m17s transcript, structural checks on two deterministic fixtures, explicit long-chunk review, acceptance/rejection, stale-revision behavior, and persistence after restart."
+    inputs:
+      - "All completed implementation and review receipts"
+      - "Existing local 10m17s QA media/project"
+      - "Two deterministic transcript fixtures"
+      - "Goal oracle and acceptance criteria in goal.md"
+    constraints:
+      - "Do not weaken assertions to make the demo pass."
+      - "Record semantic-quality observations and structural evidence separately."
+      - "Do not include credentials or full sensitive payloads in the receipt."
+      - "If the real QA artifact is unavailable, complete all local fixture work and record the exact blocked evidence instead of stopping the goal early."
+    expected_output:
+      - "Per-mode browser and CLI walkthrough receipt"
+      - "Exact-coverage and persistence evidence"
+      - "Human semantic-quality verdict"
+      - "Any remaining blocker or final-audit recommendation"
+    receipt:
+      result: done
+      summary: "Completed the real 10m17s / 1,463-word oracle in both modes through the browser and restricted external-agent CLI. Discover mode produced eight unequal semantic movements with specific themes, rationales, spans, stable IDs, and visual ideas; all eight long chunks were scrollable and the human rejected the staged result. Outline mode exposed seven ordered creator briefs identically to the CLI, mapped one chronological shot to each brief, displayed all seven scrollable chunks, and the human accepted the staged result. Exact coverage, raw transcript immutability, Chrome visibility, and restart persistence were verified."
+      commands:
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+          status: pass
+        - cmd: "npm run quality"
+          status: pass
+        - cmd: "npm run local:restart"
+          status: pass
+        - cmd: "restricted CLI proposal context/submit for discover and outline on project cf1aa704-3c13-47c3-a4b3-512dfa8c62b3"
+          status: pass
+        - cmd: "post-restart restricted CLI editorial projection"
+          status: pass
+        - cmd: "Chrome reopen and accepted-state check"
+          status: pass
+      evidence:
+        - "Real project remained the existing Groq QA artifact: 616,199 ms and 1,463 words."
+        - "Discover task 61ca89b3-2f58-4310-ad3c-db92c79e6eda exposed mode, target 8, direction, complete timestamps, and all 1,463 words to the restricted CLI."
+        - "Discover proposal 9f322ea2-2071-4f75-94b1-3b932d6b6ec5 used unequal semantic boundaries 0-157, 158-353, 354-478, 479-726, 727-846, 847-1001, 1002-1215, and 1216-1462; it was staged and rejected by the human."
+        - "Every discover transcript container was actually scrollable: clientHeight 132 px and scrollHeight 326-574 px."
+        - "Outline task bc545640-a65a-4200-852b-4bddd905a4df exposed seven ordered briefs, the creator direction, target 7, and all 1,463 words identically to the restricted CLI."
+        - "Outline proposal f5d82d2c-1d05-4ddc-8209-ed54dbbc18cf mapped brief-1 through brief-7 in order and was explicitly accepted by the human."
+        - "Accepted revision 5 has seven stable proposal-authored UUIDs and exact continuous coverage 0-1462 with no gaps, overlaps, duplicates, or reordering."
+        - "After two service restarts, the project reopened at revision 5 in both the in-app browser and Chrome, the CLI returned the same seven IDs, and both corrected and raw transcripts remained at 1,463 words."
+        - "The 4-word service fixture and 180-word browser fixture cover invalid coverage, soft-target explanations, ordered briefs, stale project/transcript revisions, ID safety, accept/reject, scrollability, and persistence."
+      semantic_quality_verdict:
+        discover: "pass: boundaries follow genuine shifts from national aftermath, to the global campaign, domestic threat warnings, intelligence reform, domestic reorganization, departmental accountability, operating mandate, and historical call to action. They are materially unequal and are not relabeled equal thirds."
+        outline: "pass: each supplied brief maps to a coherent complete movement. The intentionally broad Reform the system brief remains a larger shot because it connects missed signals through domestic protections to the explicit reorganization conclusion."
+        generic_equal_chunk_misfire: rejected
+      deviations:
+        - "The first browser queue occurred before the long-running service process had been restarted onto the new implementation. The persisted task retained its planning payload; after restart the CLI could read it. A fresh task was then queued and used for the full discover oracle."
+        - "The test harness extracted the newly printed local agent credential after restart, so it queued a fresh discover task instead of continuing the prior claim. In normal operation the external agent retains its issued restricted credential; persisted claims remain lease-recoverable."
+        - "The full interactive two-mode pass used the in-app browser, followed by a literal Chrome reopen and accepted-state verification to satisfy the Chrome acceptance wording."
+      remaining_blockers: []
+      stopped_because: null
+      harness: codex
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Migrate the release-level browser/CLI oracle and public walkthrough off the removed equal-chunk helper: have the oracle read revision-bound semantic context, write a specific stable-ID proposal fixture, submit it through the supported --shots-file command, and update the README to teach that same external-agent flow."
+    inputs:
+      - "T006 real-oracle receipt"
+      - "T999 incomplete audit"
+      - "Failing npm run test:oracle output"
+    allowed_files:
+      - "tests/release/oracle.spec.ts"
+      - "README.md"
+    verify:
+      - "npm run test:oracle"
+      - "npm run test:cli"
+      - "npx playwright test tests/semantic-shot-planning.spec.ts"
+      - "npm run quality"
+      - "git diff --check"
+    stop_if:
+      - "A required repair falls outside the approved files."
+      - "The replacement would reintroduce equal or generic Beat N segmentation."
+      - "The replacement would bypass the executable CLI, revision binding, stable staged IDs, or human acceptance."
+      - "The same verification failure persists after two evidence-based repair attempts."
+    receipt:
+      result: done
+      changed_files:
+        - tests/release/oracle.spec.ts
+        - README.md
+      commands:
+        - cmd: "npm run test:oracle"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/semantic-shot-planning.spec.ts"
+          status: pass
+        - cmd: "npm run quality"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Migrated the executable release browser/CLI oracle from the removed equal-chunk helper to the supported revision-bound semantic flow. The oracle now retrieves proposal context, writes a specific two-shot fixture with stable UUIDs, submits it through --shots-file, and continues through browser review, explicit human acceptance, downstream asset/render work, and restart. Updated the README walkthrough to teach context inspection and semantic proposal-file submission."
+      deviations:
+        - "The dedicated GoalBuddy Worker timed out before returning changes, so the PM completed the exact bounded package as the allowed fallback."
+        - "The deterministic two-word oracle retains two shots because later ledger assertions intentionally exercise two accepted shots; themes and rationales are specific and the real-media receipt remains the semantic-quality proof."
+      remaining_blockers: []
+      verification_attempts: 1
+      stopped_because: null
+      harness: codex
+  - id: T008
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Perform the final completion audit after the release oracle and public walkthrough use the supported semantic proposal-file path."
+    inputs:
+      - "All completed receipts"
+      - "T007 diff and verification"
+      - "Goal oracle and every acceptance criterion in goal.md"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any required task remains queued or active."
+      - "Require fresh green quality, focused semantic suites, release oracle, real-file semantic review, Chrome proof, and restart persistence."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Acceptance-criteria and oracle evidence map"
+      - "Missing evidence"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "All ten acceptance criteria and the concrete oracle are now proven. The product supports both revision-bound browser modes and a restricted external-agent CLI context/submission bridge; deterministic validation preserves exact coverage, stable identities, raw transcript immutability, human authority, stale safety, and persistence. The real 10m17s transcript produced useful non-equal discover boundaries and a coherent seven-brief outline mapping, with explicit browser reject/accept, scrollable chunks, Chrome verification, and restart proof. The release oracle and README now use the supported semantic proposal-file flow. No required implementation work remains."
+      acceptance_criteria:
+        AC1: "pass: browser queued discover and outline tasks against corrected revision 4 on the real project and in the deterministic browser fixture"
+        AC2: "pass: default target is 3, target is soft, invalid targets are blocked, and service tests require a deviation explanation when count differs"
+        AC3: "pass: free-form direction and seven ordered briefs were entered in-browser and returned identically by restricted CLI proposal context"
+        AC4: "pass: claimed CLI context exposed revision, transcript ID, 1,463 timestamped words, mode, target, constraints, direction, and briefs without secrets"
+        AC5: "pass: discover and outline submissions used stable UUIDs, specific themes, rationales, spans, summaries, and visual ideas; generic Beat N output is absent"
+        AC6: "pass: service validation and fixtures reject gaps, overlap, reordering, out-of-range spans, malformed/colliding IDs; accepted real coverage is continuous 0-1462"
+        AC7: "pass: raw and corrected transcripts both remained 1,463 words after planning/acceptance and no narration cut was created"
+        AC8: "pass: all real discover and outline chunks were staged and scrollable; discover was rejected, outline accepted, stale adjustments/submissions fail clearly"
+        AC9: "pass: accepted revision 5, seven stable IDs, task/proposal state, and transcripts survived two service restarts and reopened in CLI, in-app browser, and Chrome"
+        AC10: "pass: model 5, service 14, CLI 5, focused browser 3, release oracle 4 node plus 1 browser, two deterministic fixtures, and real Chrome/CLI semantic review all pass"
+      oracle_evidence:
+        - "Real Groq artifact: 616,199 ms, 1,463 words, project cf1aa704-3c13-47c3-a4b3-512dfa8c62b3."
+        - "Discover proposal used eight unequal topic transitions and every transcript container was scrollable."
+        - "Outline proposal mapped brief-1 through brief-7 in order and was accepted at revision 5 with exact 0-1462 coverage."
+        - "Post-restart restricted CLI and Chrome both showed the same seven accepted stable IDs and revision 5."
+        - "Release browser/CLI oracle now uses proposal context plus --shots-file and completes human acceptance, assets, renders, artifacts, and restart."
+      commands:
+        - cmd: "npm run quality"
+          status: pass
+        - cmd: "npm run test:model"
+          status: "pass: 5"
+        - cmd: "npm run test:service"
+          status: "pass: 14"
+        - cmd: "npm run test:cli"
+          status: "pass: 5"
+        - cmd: "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+          status: "pass: 3"
+        - cmd: "npm run test:oracle"
+          status: "pass: 4 node + 1 browser"
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "GoalBuddy state checker"
+          status: "pass before final transition"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Mark T008 done."
+        - "Set active_task to null."
+        - "Set goal.status to done."
+      deviations:
+        - "The dedicated final Judge timed out in the bounded GoalBuddy window, so the PM performed the documented final-audit fallback against fresh verification."
+      harness: codex
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether all receipts and fresh verification prove the full semantic shot-planning owner outcome."
+    inputs:
+      - "All completed task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Goal oracle and every acceptance criterion in goal.md"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if only structural coverage passes but semantic usefulness lacks real human evidence."
+      - "Reject completion if either planning mode, restart persistence, stale-revision handling, or the external-agent bridge is unproven."
+      - "Reject stopping only because an isolated slice needs owner input when safe local work remains."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Acceptance-criteria and oracle evidence map"
+      - "Missing evidence"
+      - "Next largest safe task if not complete"
+    receipt:
+      result: done
+      decision: not_complete
+      full_outcome_complete: false
+      rationale: "AC1-9 and the real-media portion of AC10 are proven, including useful non-equal semantic boundaries, both browser modes, restricted CLI context and submission, exact coverage, raw-transcript immutability, staged accept/reject, stale handling, Chrome visibility, and restart persistence. Completion is rejected because the fresh repository oracle suite still calls the deliberately removed proposal submit-chronological command, and the public README teaches that obsolete equal-chunk path. One bounded compatibility cleanup remains."
+      worker_package:
+        objective: "Migrate the release-level browser/CLI oracle and public walkthrough off the removed equal-chunk helper: have the oracle read revision-bound semantic context, write a specific stable-ID proposal fixture, submit it through the supported --shots-file command, and update the README to teach that same external-agent flow."
+        allowed_files:
+          - tests/release/oracle.spec.ts
+          - README.md
+        verify:
+          - "npm run test:oracle"
+          - "npm run test:cli"
+          - "npx playwright test tests/semantic-shot-planning.spec.ts"
+          - "npm run quality"
+          - "git diff --check"
+        stop_if:
+          - "A required repair falls outside the approved files."
+          - "The replacement would reintroduce equal or generic Beat N segmentation."
+          - "The replacement would bypass the executable CLI, revision binding, stable staged IDs, or human acceptance."
+          - "The same verification failure persists after two evidence-based repair attempts."
+      acceptance_criteria:
+        AC1-AC9: "pass; mapped across T003-T006 receipts and fresh focused suites"
+        AC10: "partial; model, service, CLI, focused browser, two deterministic fixtures, real 10m17s walkthrough, semantic verdict, Chrome proof, and restart persistence pass, but npm run test:oracle fails on the removed equal-chunk CLI command"
+      commands:
+        - cmd: "npm run quality"
+          status: pass
+        - cmd: "npm run test:model"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/production-editorial.spec.ts tests/semantic-shot-planning.spec.ts"
+          status: pass
+        - cmd: "npm run test:oracle"
+          status: "fail: release/oracle.spec.ts invokes removed proposal submit-chronological"
+      missing_evidence:
+        - "A green release browser/CLI oracle using proposal context plus --shots-file."
+        - "Public walkthrough documentation aligned with the supported semantic path."
+        - "Final post-repair completion audit."
+      blocked_tasks: []
+      required_board_updates:
+        - "Activate T007."
+        - "Keep T008 queued as the final audit."
+      harness: codex
+checks:
+  dirty_fingerprint: "207f543ec137f7528e6b548646ed227ded0309ba2b66c5e30162ea5f7fb9cb57"
+  last_verification:
+    result: unknown
+    task: null
+    commands: []

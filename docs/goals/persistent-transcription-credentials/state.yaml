@@ -1,0 +1,1124 @@
+version: 2
+
+goal:
+  title: "Persistent Transcription Credentials"
+  slug: "persistent-transcription-credentials"
+  kind: existing_plan
+  tranche: "Validate and implement the complete macOS Keychain-backed app-and-CLI credential workflow."
+  status: active
+  oracle:
+    signal: "Secret-canary tests plus a restart-persistent browser-and-CLI transcription walkthrough."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Canary leakage audit, persisted live transcription walkthrough, rotation/removal proof, and npm run test:release."
+  intake:
+    original_request: "Create an implementation plan using GoalBuddy Prep for persistent API keys in the app and CLI."
+    interpreted_outcome: "Rant Studio securely persists OpenAI and Groq credentials for repeated human-agent QA without exposing raw keys."
+    input_shape: existing_plan
+    audience: "Rant Studio users and collaborating agents"
+    authority: requested
+    proof_type: test
+    completion_proof: "A human can configure a provider in the app or CLI, both surfaces share readiness and transcription capability across restart, and security and release tests pass."
+    likely_misfire: "Persisting an encrypted database value or UI secret that still exposes credentials to the browser, filesystem, logs, receipts, or agents."
+    blind_spots_considered:
+      - "Keychain automation and test isolation"
+      - "exact-origin credential-route protection"
+      - "environment and Keychain precedence"
+      - "rotation and runtime cache invalidation"
+      - "agent capability without secret retrieval"
+      - "dirty branch preservation"
+    existing_plan_facts:
+      - "Use macOS Keychain for raw secrets."
+      - "Keep only non-secret metadata in SQLite."
+      - "Support app and CLI configuration against one local service."
+      - "Environment variables override Keychain for CI and temporary QA."
+      - "Support OpenAI and Groq first; the owner corrected the earlier xAI/Grok assumption."
+      - "Never return a saved key after configuration."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  exact_human_approval_can_terminal_wait: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/persistent-transcription-credentials/"
+    command: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.4.1/skills/goal-prep/surfaces/local-goal-board/scripts/local-goal-board.mjs --goal docs/goals/persistent-transcription-credentials"
+
+active_task: T007
+
+tasks:
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the agreed credential architecture against the current dirty branch and specify the largest safe first implementation slice."
+    inputs:
+      - "docs/goals/persistent-transcription-credentials/goal.md"
+      - "Current branch and dirty diff"
+      - "Existing transcription provider, service, CLI, store, UI, and test surfaces"
+    constraints:
+      - "Read-only."
+      - "Preserve the existing plan facts unless evidence requires a documented correction."
+      - "Do not alter or revert current uncommitted transcription work."
+    expected_output:
+      - "Architecture decision and threat-boundary validation"
+      - "Current-file integration map"
+      - "Largest safe first Worker objective"
+      - "Exact allowed_files, verify commands, and stop conditions"
+      - "Risks and deferred non-goals"
+    receipt:
+      result: done
+      harness: codex
+      decision: approved
+      full_outcome_complete: false
+      rationale: "The Keychain-plus-metadata design fits the existing loopback service and dirty transcription work. The current provider is constructed once at startup, CORS trusts every localhost subdomain, and project:* acts as a broad scope wildcard; the first slice must replace startup-fixed selection with a credential-aware resolver and give secret mutations exact-origin plus human-authority checks. macOS security must receive writes through stdin, never argv. SQLite should persist provider, selection, health, timestamps, and an opaque Keychain account only. Existing project history secret rejection is useful but does not replace endpoint-specific redaction tests."
+      worker_package:
+        objective: "Implement the Keychain-backed credential registry and dynamic transcription-provider service API as one tested vertical slice, including metadata-only persistence, environment-over-Keychain precedence, exact-origin and human-authority enforcement, validation, selection, rotation, removal, and a fake secret-store adapter."
+        allowed_files:
+          - apps/service/src/credential-store.ts
+          - apps/service/src/main.ts
+          - apps/service/src/migrations.ts
+          - apps/service/src/server.ts
+          - apps/service/src/store.ts
+          - packages/transcription/src/config.ts
+          - packages/transcription/src/index.ts
+          - packages/transcription/src/remote.ts
+          - packages/transcription/src/types.ts
+          - tests/service/foundation.test.ts
+          - tests/intake/providers.test.ts
+          - package.json
+          - package-lock.json
+        verify:
+          - "npm run test:service"
+          - "npm run test:intake"
+          - "npm run check"
+          - "npm run lint"
+        stop_if:
+          - "The Keychain integration requires raw secrets in argv, browser responses, SQLite, logs, receipts, or project files."
+          - "The metadata migration would destroy or overwrite existing data."
+          - "Credential mutation cannot be separated from broad localhost CORS and human authority."
+          - "Need files outside allowed_files."
+          - "A required verification command fails twice for the same unexplained reason."
+      evidence:
+        - "apps/service/src/main.ts constructs one TranscriptProvider from environment before service startup."
+        - "apps/service/src/server.ts accepts 127.0.0.1, localhost, and every *.localhost origin and injects a fixed provider into transcription routes."
+        - "apps/service/src/store.ts already rejects secret-shaped project mutation payloads and accepts a provider per transcription run."
+        - "apps/service/src/migrations.ts has append-only numbered SQLite migrations and no provider credential metadata table."
+        - "packages/transcription/src/config.ts implements deterministic/OpenAI/xAI environment selection but has no dynamic resolver."
+        - "packages/transcription/src/remote.ts holds raw API keys only in provider instances and emits redacted provider errors."
+        - "apps/cli/src/index.ts and src/ProductionIntake.tsx both use the shared loopback API surface and can consume later credential endpoints."
+        - "tests/service/foundation.test.ts already tests credentials, SQLite secret absence, and broad localhost CORS."
+      blocked_tasks: []
+      missing_evidence:
+        - "Live Keychain and paid-provider behavior remain future oracle work."
+      required_board_updates:
+        - "Replace T002 with the exact worker_package in this receipt."
+        - "Keep T003 as the security phase-boundary review."
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the Keychain-backed credential registry and dynamic transcription-provider service API as one tested vertical slice, including metadata-only persistence, environment-over-Keychain precedence, exact-origin and human-authority enforcement, validation, selection, rotation, removal, and a fake secret-store adapter."
+    inputs:
+      - "T001 receipt and approved architecture"
+      - "Existing OpenAI/xAI transcription provider work"
+      - "Current service and SQLite store contracts"
+    constraints:
+      - "Adapt exact allowed_files to T001 only if the PM records the change before dispatch."
+      - "Use macOS Keychain for production raw-secret storage and a dependency-injected in-memory/fake adapter for tests."
+      - "SQLite may contain provider metadata and an opaque Keychain locator only."
+      - "Never provide a get-secret endpoint or return the raw credential after save."
+      - "Environment override precedence is explicit process environment, then selected Keychain credential, then deterministic provider."
+      - "Exact-origin protection applies to every credential mutation."
+      - "Do not revert or rewrite unrelated dirty transcription work."
+    expected_output:
+      - "Credential-store interface and macOS implementation"
+      - "Metadata schema/migration with no raw-secret column"
+      - "Provider list/configure/test/replace/remove service contracts"
+      - "Immediate rotation/removal cache invalidation"
+      - "Service and provider-resolution tests with secret canaries"
+    allowed_files:
+      - "apps/service/src/credential-store.ts"
+      - "apps/service/src/main.ts"
+      - "apps/service/src/migrations.ts"
+      - "apps/service/src/server.ts"
+      - "apps/service/src/store.ts"
+      - "packages/transcription/src/config.ts"
+      - "packages/transcription/src/index.ts"
+      - "packages/transcription/src/remote.ts"
+      - "packages/transcription/src/types.ts"
+      - "tests/service/foundation.test.ts"
+      - "tests/intake/providers.test.ts"
+      - "package.json"
+      - "package-lock.json"
+    verify:
+      - "npm run test:service"
+      - "npm run test:intake"
+      - "npm run check"
+      - "npm run lint"
+    stop_if:
+      - "The Keychain integration requires raw secrets in argv, browser responses, SQLite, logs, receipts, or project files."
+      - "The metadata migration would destroy or overwrite existing data."
+      - "Credential mutation cannot be separated from broad localhost CORS and human authority."
+      - "Need files outside allowed_files."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - apps/service/src/credential-store.ts
+        - apps/service/src/main.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - packages/transcription/src/config.ts
+        - packages/transcription/src/types.ts
+        - tests/service/foundation.test.ts
+        - tests/intake/providers.test.ts
+      commands:
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run lint"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Added a macOS Keychain adapter that writes secrets through child stdin, a fake memory adapter, metadata-only migration v10, dynamic env-over-Keychain provider resolution, human-only exact-origin credential mutation routes, agent-readable redacted status, configure/test/select/replace/remove behavior, and canary coverage proving wrong-origin and agent writes fail while raw keys stay out of API responses and SQLite. Rotation is immediate because providers are resolved per transcription request; removal falls back to deterministic transcription."
+      deviations:
+        - "The dedicated GoalBuddy Worker timed out without changing allowed files; PM fallback completed the exact active card."
+        - "Existing lint emits 11 pre-existing warnings but exits successfully with zero errors."
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T003
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Perform the security phase-boundary review of the credential core before exposing it through CLI and browser UI."
+    inputs:
+      - "T001 and T002 receipts"
+      - "T002 diff"
+      - "Targeted verification output"
+    constraints:
+      - "Read-only."
+      - "Reject any design that permits raw-secret recovery by browser, agent, database reader, log reader, receipt reader, or ordinary process inspection."
+      - "Check exact-origin behavior, concurrency, partial-failure rollback, replacement semantics, and cache invalidation."
+    expected_output:
+      - "approve | revise"
+      - "Threat-boundary findings ordered by severity"
+      - "Any required corrective Worker task with exact allowed_files and verify commands"
+      - "Confirmation that T004 and T005 may proceed"
+    receipt:
+      result: done
+      harness: codex
+      decision: rejected
+      full_outcome_complete: false
+      rationale: "The core correctly uses Keychain stdin, metadata-only SQLite, human authority, exact browser origin, dynamic resolution, and redacted API responses, but it is not ready for CLI/UI exposure. Configure/remove are multi-step Keychain-plus-SQLite operations without serialization, so concurrent mutations can leave stale metadata or a missing secret. Best-effort rollback failures are silently swallowed. Invalid RANT_STUDIO_TRANSCRIPTION_PROVIDER values silently fall through to Keychain. Finally, remote provider error bodies are persisted and could echo the submitted credential. These are bounded corrections within the existing core and tests."
+      worker_package:
+        objective: "Harden the credential core before CLI/UI exposure by serializing cross-store mutations, surfacing rollback failures, rejecting invalid environment selection instead of silently falling back, and redacting exact credentials from provider-supplied failure text before persistence."
+        allowed_files:
+          - apps/service/src/credential-store.ts
+          - packages/transcription/src/remote.ts
+          - tests/service/foundation.test.ts
+          - tests/intake/providers.test.ts
+        verify:
+          - "npm run test:service"
+          - "npm run test:intake"
+          - "npm run check"
+          - "npm run lint"
+        stop_if:
+          - "The correction requires files outside allowed_files."
+          - "A rollback test would touch a real Keychain item."
+          - "Credential redaction would require persisting or exposing a second copy of the secret."
+          - "A required verification command fails twice for the same unexplained reason."
+      evidence:
+        - "apps/service/src/credential-store.ts configure/remove perform separate Keychain and SQLite operations without a mutation queue."
+        - "apps/service/src/credential-store.ts catches and discards rollback failures."
+        - "apps/service/src/credential-store.ts selectedEnvironmentProvider returns undefined for invalid configured values, enabling unintended Keychain fallback."
+        - "packages/transcription/src/remote.ts includes provider response messages in thrown errors without exact-key redaction."
+        - "apps/service/src/store.ts persists transcription provider failure messages into transcription_attempts and job_attempts."
+      blocked_tasks:
+        - T004
+        - T005
+      missing_evidence:
+        - "Concurrency, rollback-failure, invalid-environment, and echoed-secret regression coverage."
+      required_board_updates:
+        - "Activate T008 before T004 and T005."
+        - "Re-run the security boundary review after T008 verification."
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Harden the credential core before CLI/UI exposure by serializing cross-store mutations, surfacing rollback failures, rejecting invalid environment selection instead of silently falling back, and redacting exact credentials from provider-supplied failure text before persistence."
+    inputs:
+      - "T003 security review"
+      - "T002 credential registry and remote provider implementation"
+    constraints:
+      - "Do not broaden credential visibility or add a read-secret API."
+      - "Do not place credentials in argv, fixtures, snapshots, logs, or receipts."
+      - "Preserve environment > Keychain > deterministic precedence."
+      - "Keep the correction within the exact allowed_files."
+    expected_output:
+      - "Serialized configure/select/test/remove mutations"
+      - "Explicit partial-rollback failure reporting"
+      - "Fail-closed invalid environment provider handling"
+      - "Exact-key redaction from remote provider errors"
+      - "Regression tests for races, rollback, invalid environment, and echoed-secret failures"
+    allowed_files:
+      - "apps/service/src/credential-store.ts"
+      - "packages/transcription/src/remote.ts"
+      - "tests/service/foundation.test.ts"
+      - "tests/intake/providers.test.ts"
+    verify:
+      - "npm run test:service"
+      - "npm run test:intake"
+      - "npm run check"
+      - "npm run lint"
+    stop_if:
+      - "The correction requires files outside allowed_files."
+      - "A rollback test would touch a real Keychain item."
+      - "Credential redaction would require persisting or exposing a second copy of the secret."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - apps/service/src/credential-store.ts
+        - packages/transcription/src/remote.ts
+        - tests/service/foundation.test.ts
+        - tests/intake/providers.test.ts
+      commands:
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run lint"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Serialized configure/select/test/remove operations behind one mutation queue, made reads and provider resolution wait for in-flight mutations, surfaced AggregateError when cross-store rollback fails, rejected invalid environment provider values, prevented stale Keychain health from coloring environment overrides, and redacted the exact API key from provider response errors before those errors can be persisted. Added fake-store regression coverage for serialized writes, rollback failure, invalid environment selection, and echoed-key redaction."
+      deviations:
+        - "PM fallback completed this bounded correction after the installed GoalBuddy agents repeatedly timed out on earlier tasks."
+        - "Lint retains 11 pre-existing warnings and zero errors."
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T010
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Re-review the credential core after T008 and decide whether CLI and UI exposure may proceed."
+    inputs:
+      - "T003 security review receipt"
+      - "T008 receipt and diff"
+      - "Latest targeted verification"
+    constraints:
+      - "Read-only."
+      - "Confirm concurrency, rollback reporting, fail-closed environment handling, exact-key error redaction, origin enforcement, authority, and no raw-secret recovery."
+      - "Do not approve based only on passing tests; map evidence to each T003 finding."
+    expected_output:
+      - "approve | revise"
+      - "Finding-by-finding closure map"
+      - "Confirmation whether T004 and T005 may proceed"
+      - "Exact corrective Worker package if any finding remains"
+    receipt:
+      result: done
+      harness: codex
+      decision: approved
+      full_outcome_complete: false
+      rationale: "T008 closes every T003 blocker. A promise queue serializes all cross-store writes and makes snapshots/provider resolution await them. Rollback failure is explicit rather than swallowed. Invalid environment selection now throws the same bounded configuration error as the original environment factory. Provider response messages replace the exact credential before errors reach service persistence. Existing evidence still shows bare final -w with stdin, metadata-only SQLite, exact app-origin browser mutations, human-only writes, agent-readable redacted status, per-request provider resolution, and no get-secret route. CLI and UI work may proceed."
+      evidence:
+        - "apps/service/src/credential-store.ts #mutationQueue and #mutate serialize configure/select/test/remove and gate reads."
+        - "apps/service/src/credential-store.ts #rollback throws AggregateError when restoration fails."
+        - "apps/service/src/credential-store.ts selectedEnvironmentProvider rejects invalid values."
+        - "packages/transcription/src/remote.ts redactSecret removes the exact API key from provider response errors."
+        - "tests/intake/providers.test.ts covers serialized writes, rollback failure, invalid environment selection, and echoed-key redaction."
+        - "tests/service/foundation.test.ts covers exact origin, human/agent authority, API redaction, SQLite absence, validation, rotation, removal, and deterministic fallback."
+        - "T008 verification passed service, intake, typecheck, lint, and diff checks."
+      blocked_tasks: []
+      missing_evidence:
+        - "CLI and browser UI behavior remain unimplemented."
+        - "Live macOS Keychain persistence and paid-provider transcription remain final-oracle work."
+      required_board_updates:
+        - "Proceed through T009, T004, and T005."
+  - id: T009
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: "Apply the repository formatter to the two T002 core files that fail format:check, without changing behavior."
+    inputs:
+      - "npm run format:check output after T008"
+    constraints:
+      - "Mechanical formatting only."
+      - "Do not change behavior or touch files outside allowed_files."
+    expected_output:
+      - "Both files match repository formatting"
+      - "Targeted and global format checks pass"
+    allowed_files:
+      - "apps/service/src/server.ts"
+      - "packages/transcription/src/config.ts"
+    verify:
+      - "npx prettier --check apps/service/src/server.ts packages/transcription/src/config.ts"
+      - "npm run format:check"
+      - "npm run check"
+    stop_if:
+      - "Formatting produces semantic changes."
+      - "Global format failures remain in files outside allowed_files."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - apps/service/src/server.ts
+        - packages/transcription/src/config.ts
+      commands:
+        - cmd: "npx prettier --check apps/service/src/server.ts packages/transcription/src/config.ts"
+          status: pass
+        - cmd: "npm run format:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Applied the repository formatter to the two T002 files identified by the global format gate. No behavioral changes were made; targeted formatting, global formatting, and TypeScript checks pass."
+      deviations: []
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add CLI provider management against the shared local credential service: list, configure, test, select, replace, and remove, using secure interactive input and machine-readable readiness output."
+    inputs:
+      - "Approved T002 credential service contract"
+      - "T003 security review"
+      - "Existing Rant Studio CLI conventions"
+    constraints:
+      - "Raw credentials must not be accepted as ordinary argv values."
+      - "Interactive configuration must not echo the key; non-interactive automation may use stdin without logging it."
+      - "CLI output exposes provider status, source, health, and metadata only."
+      - "Commands must be agent-usable with stable exit codes and structured output."
+      - "Do not make CLI success depend on a live paid provider in automated tests."
+    expected_output:
+      - "Human-readable and JSON provider-management commands"
+      - "Secure prompt/stdin credential input"
+      - "Agent-safe readiness output"
+      - "CLI tests covering success, invalid credentials, absent service, rotation, removal, and redaction"
+      - "Operator documentation without real keys"
+    allowed_files:
+      - "apps/cli/src/**"
+      - "tests/cli/**"
+      - "docs/operator/**"
+      - "README.md"
+      - "package.json"
+      - "package-lock.json"
+    verify:
+      - "npm run test:cli"
+      - "npm run check"
+      - "npm run lint"
+      - "npm run format:check"
+    stop_if:
+      - "The service contract cannot perform a required operation without revealing the credential."
+      - "Secure TTY/stdin behavior cannot be tested without weakening production handling."
+      - "Need files outside allowed_files."
+      - "Targeted verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - apps/cli/src/index.ts
+        - apps/cli/src/main.ts
+        - tests/cli/foundation.test.ts
+        - docs/operator/README.md
+        - README.md
+      commands:
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run lint"
+          status: pass
+        - cmd: "npm run format:check"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      summary: "Added provider list/configure/test/select/remove CLI commands with human-readable and --json output, secure hidden TTY input, explicit stdin automation, raw-argument rejection, and the existing stable API/input exit-code behavior. Agent credentials can list redacted readiness; service authority rejects their mutations. Integration tests cover configure, list, authority, validation, rotation, removal, deterministic fallback, redaction, and argument rejection. README and operator guidance document the shared Keychain workflow."
+      deviations:
+        - "The first format:check attempt found only new-file formatting; Prettier was applied within allowed_files and the full T004 suite then passed."
+        - "Lint retains 11 pre-existing warnings and zero errors."
+      remaining_blockers: []
+      verification_attempts: 2
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Build the in-app Transcription Providers settings experience for adding, testing, selecting, replacing, and removing OpenAI/xAI credentials while displaying shared agent-visible readiness without ever returning a saved key."
+    inputs:
+      - "Approved T002 credential service contract"
+      - "T003 security review"
+      - "Current Rant Studio intake/settings UX"
+    constraints:
+      - "Saved credential values are write-only and disappear from the form after submission."
+      - "Do not use localStorage, sessionStorage, IndexedDB, URL parameters, analytics, or browser logs for credentials."
+      - "Require deliberate confirmation for removal, but not for non-destructive connection testing."
+      - "Clearly distinguish environment override, persisted credential, invalid credential, missing credential, and deterministic fallback."
+      - "All controls must remain keyboard accessible and usable at supported narrow viewports."
+    expected_output:
+      - "Provider settings surface integrated into the app"
+      - "Masked write-only entry and replacement flow"
+      - "Test/select/remove controls with clear status and recovery text"
+      - "Human-agent shared readiness presentation"
+      - "Component and Playwright tests proving no secret survives in browser state"
+    allowed_files:
+      - "src/**"
+      - "tests/intake/**"
+      - "tests/intake.spec.ts"
+      - "tests/scale.spec.ts"
+    verify:
+      - "npm run test:intake"
+      - "npm run test:e2e -- --grep \"provider|credential|transcription\""
+      - "npm run test:a11y"
+      - "npm run check"
+      - "npm run lint"
+    stop_if:
+      - "The service returns a raw saved credential or requires browser persistence."
+      - "The settings integration would overwrite unrelated intake UX work."
+      - "Need files outside allowed_files."
+      - "Targeted verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - src/ProviderSettings.tsx
+        - src/ProductionIntake.tsx
+        - src/styles.css
+        - tests/intake.spec.ts
+      commands:
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run test:e2e -- --grep \"provider|credential|transcription\""
+          status: pass
+        - cmd: "npm run test:a11y"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run lint"
+          status: pass
+        - cmd: "npm run format:check"
+          status: pass
+      summary: "Added an in-app Transcription Providers surface with write-only masked OpenAI/xAI entry, shared active/readiness metadata, validation, selection, replacement, inline removal confirmation, environment/Keychain/deterministic source states, responsive layout, and agent-boundary guidance. Playwright proves submitted keys clear immediately and never enter page content or browser storage while save, test, rotate, remove, and deterministic fallback work through the real service."
+      deviations:
+        - "The first lint attempt found one new effect rule violation; the effect was made cancellation-safe and the complete T005 verification then passed."
+        - "An extra global max-lines check found frozen legacy files above their ratchets; T011 was created to extract the new behavior without weakening CI."
+      remaining_blockers:
+        - "T011 must restore the max-lines invariant before the release oracle."
+      spawned_tasks:
+        - T011
+      verification_attempts: 2
+  - id: T011
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Restore the max-lines CI invariant by extracting credential routes, SQLite provider metadata, and provider settings styles from frozen legacy files into bounded new modules without changing verified behavior."
+    inputs:
+      - "T002–T005 implementation and receipts"
+      - "npm run check:max-lines failure for server.ts, store.ts, and styles.css"
+    constraints:
+      - "Do not raise or weaken maximum-line limits."
+      - "Preserve all credential authority, origin, redaction, concurrency, and UX behavior."
+      - "Do not revert pre-existing dirty transcription work."
+      - "Use new modules with explicit interfaces and keep every new production file under 500 lines."
+    expected_output:
+      - "Credential HTTP routing extracted from server.ts"
+      - "Provider metadata persistence extracted from store.ts"
+      - "Provider UI CSS extracted from styles.css"
+      - "Updated tests and lifecycle cleanup"
+      - "Global max-lines and release-adjacent gates pass"
+    allowed_files:
+      - "apps/service/src/credential-store.ts"
+      - "apps/service/src/main.ts"
+      - "apps/service/src/provider-metadata.ts"
+      - "apps/service/src/provider-routes.ts"
+      - "apps/service/src/server.ts"
+      - "apps/service/src/store.ts"
+      - "src/ProviderSettings.css"
+      - "src/ProviderSettings.tsx"
+      - "src/styles.css"
+      - "tests/service/foundation.test.ts"
+      - "tests/intake/providers.test.ts"
+      - "tests/cli/foundation.test.ts"
+      - "tests/intake.spec.ts"
+    verify:
+      - "npm run check:max-lines"
+      - "npm run test:service"
+      - "npm run test:intake"
+      - "npm run test:cli"
+      - "npm run test:e2e -- --grep \"provider|credential|transcription\""
+      - "npm run check"
+      - "npm run lint"
+      - "npm run format:check"
+    stop_if:
+      - "The extraction would require weakening a security boundary."
+      - "A new production file exceeds 500 lines."
+      - "Need files outside allowed_files."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - apps/service/src/credential-store.ts
+        - apps/service/src/main.ts
+        - apps/service/src/provider-metadata.ts
+        - apps/service/src/provider-routes.ts
+        - apps/service/src/server.ts
+        - apps/service/src/store.ts
+        - src/ProviderSettings.css
+        - src/ProviderSettings.tsx
+        - src/styles.css
+        - tests/service/foundation.test.ts
+        - tests/intake/providers.test.ts
+        - tests/cli/foundation.test.ts
+        - tests/intake.spec.ts
+      commands:
+        - cmd: "npm run check:max-lines"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/intake.spec.ts --grep provider|credential|transcription"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run lint"
+          status: pass
+        - cmd: "npm run format:check"
+          status: pass
+      summary: "Extracted provider metadata persistence, provider HTTP and origin policy, and provider settings CSS into bounded modules. Registry and service lifecycle now own the dedicated metadata store explicitly. Updated all credential tests for the extracted interface without changing human authority, redaction, environment precedence, rotation, removal, or UI behavior. All global max-line ceilings pass and every new production file remains below 500 lines."
+      deviations:
+        - "The targeted Playwright command was run directly against tests/intake.spec.ts because that is the provider credential scenario selected by the card grep."
+        - "Existing lint emits 11 pre-existing warnings but exits successfully with zero errors."
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T012
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Correct macOS Keychain writes so the securely supplied credential, rather than an empty value, is persisted without placing secret material in process argv or environment."
+    inputs:
+      - "T006 real-Keychain oracle failure"
+      - "macOS security CLI interactive password behavior"
+      - "Existing MacOSKeychainSecretStore and test-owned Keychain oracle"
+    constraints:
+      - "Raw credentials must remain absent from argv, environment, logs, responses, SQLite, and project files."
+      - "Use only a test-owned Keychain service namespace in verification."
+      - "Cleanup the exact test-owned Keychain item even on failure."
+      - "Do not weaken or skip the real macOS Keychain oracle."
+    expected_output:
+      - "Interactive Keychain write adapter that supplies the secret only over stdin to a child process"
+      - "Successful create, read-after-adapter-restart, replace, and remove proof"
+      - "Static and runtime proof that canary material is absent from argv"
+    allowed_files:
+      - "apps/service/src/credential-store.ts"
+      - "tests/release/credential-oracle.test.ts"
+    verify:
+      - "npx tsx --test tests/release/credential-oracle.test.ts"
+      - "npm run test:service"
+      - "npm run test:intake"
+      - "npm run check"
+      - "npm run lint"
+      - "npm run format:check"
+    stop_if:
+      - "The fix would put raw credentials in argv or environment."
+      - "The fix requires a non-test Keychain namespace."
+      - "Need files outside allowed_files."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - apps/service/src/credential-store.ts
+        - tests/release/credential-oracle.test.ts
+      commands:
+        - cmd: "npx tsx --test tests/release/credential-oracle.test.ts"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run lint"
+          status: pass
+        - cmd: "npm run format:check"
+          status: pass
+        - cmd: "npm run check:max-lines"
+          status: pass
+      summary: "Replaced the nonfunctional bare security -w pipe with a macOS expect pseudo-terminal interaction. The raw credential enters the helper over stdin only, is held in an in-process Tcl variable, and is sent twice to Keychain's no-echo prompts; argv and environment contain only fixed script text and non-secret account/service metadata. A real test-owned Keychain oracle now proves save, adapter-restart retrieval, rotation, process-list non-exposure, removal, and cleanup."
+      deviations:
+        - "The T006 oracle discovered that security add-generic-password with bare final -w and ordinary piped stdin stored an empty value; this corrective task preserved the no-argv requirement rather than weakening the oracle."
+        - "Existing lint emits 11 pre-existing warnings but exits successfully with zero errors."
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T013
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Restore the production dead-code gate by moving the in-memory secret fake into test support and narrowing the provider-route export surface without changing behavior."
+    inputs:
+      - "T006 npm run test:release knip:production failure"
+      - "Credential tests that currently import the production memory fake"
+    constraints:
+      - "Do not suppress or weaken Knip."
+      - "Preserve the SecretStore production interface and all credential behavior."
+      - "Keep test fakes outside production source."
+      - "Do not revert unrelated dirty work."
+    expected_output:
+      - "Test-owned MemorySecretStore helper"
+      - "No unused production exports"
+      - "Credential, browser, and release gates remain green"
+    allowed_files:
+      - "apps/service/src/credential-store.ts"
+      - "apps/service/src/provider-routes.ts"
+      - "tests/helpers/memory-secret-store.ts"
+      - "tests/service/foundation.test.ts"
+      - "tests/cli/foundation.test.ts"
+      - "tests/intake.spec.ts"
+      - "tests/release/oracle.test.ts"
+      - "tests/release/credential-oracle.test.ts"
+    verify:
+      - "npm run knip:production"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npx tsx --test tests/release/credential-oracle.test.ts"
+      - "npm run check"
+      - "npm run format:check"
+      - "npm run check:max-lines"
+    stop_if:
+      - "The correction requires weakening Knip configuration."
+      - "Need files outside allowed_files."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - apps/service/src/credential-store.ts
+        - apps/service/src/provider-routes.ts
+        - tests/helpers/memory-secret-store.ts
+        - tests/service/foundation.test.ts
+        - tests/cli/foundation.test.ts
+        - tests/intake.spec.ts
+        - tests/release/oracle.test.ts
+        - tests/release/credential-oracle.test.ts
+      commands:
+        - cmd: "npm run knip:production"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx tsx --test tests/release/credential-oracle.test.ts"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run format:check"
+          status: pass
+        - cmd: "npm run check:max-lines"
+          status: pass
+      summary: "Moved MemorySecretStore out of production and into a shared test helper, updated every consumer, and made the provider mutation classifier private to its route module. Knip production now passes without suppressions, while credential, CLI, real-Keychain, type, format, and line-count gates remain green."
+      deviations: []
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Complete the credential oracle: prove persistence across service restart, transcription-provider precedence, live-action redaction, rotation/removal behavior, and absence of secret canaries from every durable or observable surface."
+    inputs:
+      - "T002, T004, and T005 receipts"
+      - "Credential-service, CLI, UI, transcription, SQLite, logging, and activity-receipt surfaces"
+      - "Existing release oracle"
+    constraints:
+      - "Use generated canary credentials and fake provider responses for automated leakage checks."
+      - "Inspect only test-owned databases, Keychain namespaces, logs, browser storage, snapshots, and artifacts."
+      - "Tests must clean up their Keychain namespace even on failure."
+      - "No real provider key may enter fixtures, snapshots, commits, or CI."
+      - "Extend the existing release oracle instead of inventing an unrelated parallel gate."
+    expected_output:
+      - "Service-restart persistence proof"
+      - "Environment > Keychain > deterministic precedence proof"
+      - "Browser, API, SQLite, log, receipt, artifact, argv, and project-tree secret-canary audit"
+      - "Rotation and removal invalidation proof"
+      - "Release-oracle coverage for the complete shared credential workflow"
+    allowed_files:
+      - "tests/service/**"
+      - "tests/cli/**"
+      - "tests/intake/**"
+      - "tests/intake.spec.ts"
+      - "tests/release/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+    verify:
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npm run test:intake"
+      - "npm run test:oracle"
+      - "npm run test:release"
+    stop_if:
+      - "A test would inspect or delete non-test Keychain entries or user data."
+      - "A real credential is discovered in any tracked or generated artifact."
+      - "Oracle coverage requires production changes outside allowed_files; return the exact gap for a corrective Worker task."
+      - "The full release suite fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - tests/release/credential-oracle.test.ts
+        - tests/release/oracle.test.ts
+      commands:
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run test:oracle"
+          status: pass
+        - cmd: "npm run test:release"
+          status: pass
+      summary: "Completed the credential oracle. Generated canaries prove environment-over-Keychain-over-deterministic precedence, metadata and provider selection survive service-store restart, rotation and removal invalidate immediately, and API/browser status never returns raw material. A real test-owned macOS Keychain namespace proves create, read after adapter restart, replace, argv/process-list non-exposure, removal, and cleanup. The integrated release oracle keeps a canary credential configured while browser/CLI work creates SQLite state, receipts, media, and dual rendered artifacts, then recursively scans the test-owned tree and observable JSON for leakage. The complete release suite passes: quality, build, all node suites, and 23 browser tests."
+      deviations:
+        - "The oracle found and drove two completed corrective tasks: T012 fixed empty Keychain writes without exposing argv, and T013 restored Knip by moving the memory fake to test support."
+        - "Lint reports 11 pre-existing warnings and zero errors."
+      remaining_blockers: []
+      verification_attempts: 2
+  - id: T007
+    type: pm
+    assignee: PM
+    status: active
+    reasoning_hint: medium
+    objective: "Run and document the human-agent QA walkthrough using the implemented secure surface and the selected 5–15 minute media file, including persistence across restart and successful timestamped transcription."
+    inputs:
+      - "Completed automated oracle"
+      - "Configured OpenAI or Groq credential entered through the app or secure CLI prompt"
+      - "Selected 5–15 minute MP3 or MP4 QA file"
+    constraints:
+      - "Never request or accept a raw credential in chat."
+      - "If no credential is configured, guide the owner to the secure in-app or CLI entry surface."
+      - "Record provider/profile metadata and outcomes only, never secret material."
+      - "If live QA exposes a product defect, add the largest safe corrective Worker task rather than marking complete."
+    expected_output:
+      - "Provider readiness before and after service restart"
+      - "Successful media upload and remote timestamped transcription"
+      - "Observable provider selection and agent receipt without secret exposure"
+      - "Rotation or removal walkthrough"
+      - "Compact QA receipt referencing the tested media duration and result"
+    receipt:
+      result: blocked
+      harness: codex
+      summary: "The complete automated credential oracle and release suite pass, and the 10:17 QA MP3 is uploaded in the live app. The remaining walkthrough requires a user-owned OpenAI or xAI credential to be entered through the secure in-app write-only field. Three consecutive readiness checks found neither environment override nor testable Keychain credential, so paid-provider transcription, live restart persistence, and live rotation/removal cannot be truthfully verified without the human-only action."
+      evidence:
+        - "OpenAI Keychain account is absent."
+        - "xAI Keychain account is absent."
+        - "Provider API reports deterministic active with both remote providers missing."
+        - "Prepared project cf1aa704-3c13-47c3-a4b3-512dfa8c62b3 contains the verified 616.999-second MP3."
+        - "npm run test:release passed before the live handoff."
+      remaining_blockers:
+        - "Human must enter and save an OpenAI or xAI API key in the open app, test it to valid, and then resume the goal."
+      resume_when: "The in-app provider status shows valid for OpenAI or Groq. Never send the raw key through chat."
+  - id: T014
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: low
+    objective: "Wait for the owner to enter and validate a user-owned OpenAI or xAI credential through the secure in-app field, then resume the live QA walkthrough without accepting the key through chat."
+    inputs:
+      - "Open provider settings at http://rant-studio.localhost:4173/?mode=intake"
+      - "Prepared project cf1aa704-3c13-47c3-a4b3-512dfa8c62b3"
+      - "T007 blocked receipt"
+    constraints:
+      - "Never request, accept, log, or inspect the raw credential."
+      - "Resume only from redacted readiness metadata showing a valid provider."
+      - "Keep the prepared service, project, and QA media intact when practical."
+    expected_output:
+      - "Owner confirmation or redacted provider readiness showing valid"
+      - "T007 reactivated for live transcription, restart, rotation, and removal"
+    receipt:
+      result: done
+      harness: codex
+      summary: "The owner resumed the secure-key handoff and clarified that the available key is for Groq Cloud, not xAI Grok. No raw credential was accepted or inspected. The goal charter and board now identify OpenAI and Groq as the required providers, and T015 supersedes the mistaken xAI implementation before live QA resumes."
+      evidence:
+        - "Owner explicitly said Groq, not Grok."
+        - "Official Groq documentation confirms word timestamps, verbose_json, whisper-large-v3-turbo, the OpenAI-compatible transcription endpoint, and models-list credential validation."
+      remaining_blockers: []
+  - id: T015
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Replace the mistaken xAI Grok integration with Groq Cloud transcription end-to-end, preserving the complete Keychain, authority, redaction, CLI, UI, migration, and oracle guarantees."
+    inputs:
+      - "Owner correction: the available credential is Groq from console.groq.com, not xAI Grok."
+      - "Groq official transcription endpoint, model, timestamp, and models-list contracts."
+      - "Existing OpenAI/xAI credential implementation and completed security receipts."
+    constraints:
+      - "Use GROQ_API_KEY and provider name groq; do not retain xai or grok aliases."
+      - "Use https://api.groq.com/openai/v1/audio/transcriptions with whisper-large-v3-turbo, verbose_json, and word timestamp granularity."
+      - "Use https://api.groq.com/openai/v1/models for credential validation."
+      - "Migrate existing SQLite metadata safely: preserve OpenAI rows and discard incompatible xAI selection/metadata rather than relabeling its secret."
+      - "Never read, request in chat, persist outside Keychain, or expose the owner's raw Groq key."
+      - "Preserve exact-origin human-only mutation and agent-readable redacted readiness."
+      - "Do not weaken release, Knip, max-lines, or canary gates."
+    expected_output:
+      - "Groq remote transcription provider with word timestamps"
+      - "GROQ_API_KEY environment precedence and Groq Keychain metadata"
+      - "Groq service routes, CLI commands, and in-app settings card"
+      - "Append-only migration replacing the xAI-constrained metadata table"
+      - "Updated docs, security tests, browser tests, and release oracle"
+    allowed_files:
+      - ".env.example"
+      - "README.md"
+      - "docs/operator/README.md"
+      - "docs/goals/persistent-transcription-credentials/goal.md"
+      - "docs/goals/persistent-transcription-credentials/state.yaml"
+      - "packages/transcription/src/**"
+      - "apps/service/src/credential-store.ts"
+      - "apps/service/src/migrations.ts"
+      - "apps/service/src/provider-routes.ts"
+      - "apps/cli/src/index.ts"
+      - "src/ProviderSettings.tsx"
+      - "tests/helpers/memory-secret-store.ts"
+      - "tests/intake/providers.test.ts"
+      - "tests/service/foundation.test.ts"
+      - "tests/cli/foundation.test.ts"
+      - "tests/intake.spec.ts"
+      - "tests/release/credential-oracle.test.ts"
+      - "tests/release/oracle.test.ts"
+    verify:
+      - "npm run test:intake"
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npx playwright test tests/intake.spec.ts"
+      - "npm run test:oracle"
+      - "npm run test:release"
+    stop_if:
+      - "Groq cannot provide word-level timestamps for the selected model."
+      - "The migration would relabel or reuse an incompatible xAI Keychain secret."
+      - "The change requires exposing a raw credential."
+      - "Need files outside allowed_files."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - .env.example
+        - README.md
+        - docs/operator/README.md
+        - docs/goals/persistent-transcription-credentials/goal.md
+        - docs/goals/persistent-transcription-credentials/state.yaml
+        - packages/transcription/src/types.ts
+        - packages/transcription/src/config.ts
+        - packages/transcription/src/remote.ts
+        - apps/service/src/credential-store.ts
+        - apps/service/src/migrations.ts
+        - apps/service/src/provider-routes.ts
+        - apps/cli/src/index.ts
+        - src/ProviderSettings.tsx
+        - tests/intake/providers.test.ts
+        - tests/service/foundation.test.ts
+        - tests/cli/foundation.test.ts
+        - tests/intake.spec.ts
+        - tests/release/credential-oracle.test.ts
+        - tests/release/oracle.test.ts
+      commands:
+        - cmd: "npm run test:intake"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/intake.spec.ts"
+          status: pass
+        - cmd: "npm run test:oracle"
+          status: pass
+        - cmd: "npm run test:release"
+          status: pass
+      summary: "Replaced the mistaken xAI Grok integration with Groq Cloud end-to-end. Groq uses GROQ_API_KEY, the official OpenAI-compatible audio transcription and models-list endpoints, whisper-large-v3-turbo, verbose_json, and word timestamp granularity. Service routes, Keychain accounts, CLI, UI, environment precedence, canary oracles, and docs now use groq only. Migration 11 rebuilds the constrained metadata table, preserving OpenAI metadata while discarding incompatible xAI metadata and selection without relabeling any Keychain secret. The focused suites, integrated oracle, quality/build gates, node suites, and all 23 browser tests pass."
+      deviations:
+        - "Historical T001–T006 receipts remain truthful records of the superseded xAI implementation; T015 is the authoritative provider-correction receipt."
+        - "Lint reports 11 pre-existing warnings and zero errors."
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T016
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Remove the human startup-token UX and make the local owner app and CLI connect automatically, while retaining exact-origin browser protection and a separate restricted agent credential."
+    inputs:
+      - "Owner decision: Rant Studio runs locally for one user and does not need a human startup token."
+      - "Current exact-origin provider protection and human/agent authority tests."
+      - "T007 live Groq QA handoff."
+    constraints:
+      - "Do not display, print, or require a human startup credential."
+      - "Authorize tokenless browser requests only from the exact approved Rant Studio origin."
+      - "Authorize tokenless originless requests only through the loopback-bound local service for owner-operated CLI use."
+      - "Keep explicit agent credentials restricted and revocable; a presented invalid credential must fail rather than fall back to local-owner authority."
+      - "Do not weaken Keychain secrecy, provider redaction, rotation/removal, CORS, release, Knip, or max-lines gates."
+      - "Preserve existing project data and unrelated dirty work."
+    expected_output:
+      - "Automatic browser connection with no local credential form"
+      - "No human credential printed at service startup"
+      - "Tokenless owner CLI provider management and separately credentialed agent mode"
+      - "Regression tests for exact-origin owner access, wrong-origin denial, invalid-token denial, and restricted agents"
+      - "Updated browser tests and operator documentation"
+    allowed_files:
+      - "README.md"
+      - "docs/operator/README.md"
+      - "docs/goals/persistent-transcription-credentials/goal.md"
+      - "docs/goals/persistent-transcription-credentials/state.yaml"
+      - "apps/service/src/main.ts"
+      - "apps/service/src/server.ts"
+      - "apps/service/src/provider-routes.ts"
+      - "apps/cli/src/main.ts"
+      - "apps/cli/src/index.ts"
+      - "packages/api/src/index.ts"
+      - "src/ProductionIntake.tsx"
+      - "src/ProviderSettings.tsx"
+      - "tests/service/foundation.test.ts"
+      - "tests/cli/foundation.test.ts"
+      - "tests/intake.spec.ts"
+      - "tests/media.spec.ts"
+      - "tests/production-editorial.spec.ts"
+      - "tests/scale.spec.ts"
+      - "tests/release/oracle.spec.ts"
+    verify:
+      - "npm run test:service"
+      - "npm run test:cli"
+      - "npx playwright test tests/intake.spec.ts tests/media.spec.ts tests/production-editorial.spec.ts tests/scale.spec.ts tests/release/oracle.spec.ts"
+      - "npm run check"
+      - "npm run check:max-lines"
+      - "npm run knip:production"
+      - "npm run test:release"
+    stop_if:
+      - "Tokenless access would require accepting privileged browser requests from a non-approved origin."
+      - "A presented invalid or restricted agent credential could fall back to owner authority."
+      - "Need files outside allowed_files."
+      - "A required verification command fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      harness: codex
+      changed_files:
+        - README.md
+        - docs/operator/README.md
+        - docs/goals/persistent-transcription-credentials/goal.md
+        - docs/goals/persistent-transcription-credentials/state.yaml
+        - apps/service/src/main.ts
+        - apps/service/src/server.ts
+        - apps/service/src/provider-routes.ts
+        - apps/cli/src/main.ts
+        - apps/cli/src/index.ts
+        - packages/api/src/index.ts
+        - src/ProductionIntake.tsx
+        - src/ProviderSettings.tsx
+        - tests/service/foundation.test.ts
+        - tests/cli/foundation.test.ts
+        - tests/intake.spec.ts
+        - tests/media.spec.ts
+        - tests/production-editorial.spec.ts
+        - tests/scale.spec.ts
+        - tests/release/oracle.spec.ts
+      commands:
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "npm run test:service"
+          status: pass
+        - cmd: "npm run test:cli"
+          status: pass
+        - cmd: "npx playwright test tests/intake.spec.ts tests/media.spec.ts tests/production-editorial.spec.ts tests/scale.spec.ts tests/release/oracle.spec.ts"
+          status: pass
+        - cmd: "npm run format:check"
+          status: pass
+        - cmd: "npm run check:max-lines"
+          status: pass
+        - cmd: "npm run knip:production"
+          status: pass
+        - cmd: "npm run test:release"
+          status: pass
+      summary: "Removed the human startup-token flow. The exact approved Rant Studio browser origin and originless loopback owner CLI now receive local-owner authority automatically, while explicit agent credentials remain scoped and revocable and invalid presented credentials fail closed. The service no longer issues or prints a human token, the app has no connection form, provider keys remain write-only in Keychain, owner CLI provider management needs only the loopback URL, and all affected docs and browser tests reflect the automatic local workflow. Security coverage proves exact-origin access, wrong-origin denial, invalid-token denial, and restricted-agent denial. The complete release gate passes with all 23 browser tests."
+      deviations:
+        - "Because a local loopback HTTP service cannot cryptographically distinguish a human-owned shell from another process running as the same OS user, originless tokenless access is the explicit single-user local-owner trust boundary. Browser requests remain exact-origin protected, and any supplied agent token remains least-privileged."
+        - "Lint reports 11 pre-existing warnings and zero errors."
+      remaining_blockers: []
+      verification_attempts: 1
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit all receipts and current behavior against the original persistent shared-credential outcome and decide whether the goal is genuinely complete."
+    inputs:
+      - "All completed task receipts"
+      - "Final dirty diff"
+      - "Secret-canary report"
+      - "Live QA walkthrough receipt"
+      - "Latest npm run test:release result"
+    constraints:
+      - "Read-only."
+      - "Reject completion if any raw secret is retrievable or persisted outside Keychain."
+      - "Reject completion if app and CLI do not operate on the same provider configuration."
+      - "Reject completion if environment override compatibility, restart persistence, rotation/removal, or real timestamped transcription is unproven."
+      - "Reject completion if required Worker work remains queued, active, blocked without exhaustion of safe local work, or unverified."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Oracle-to-receipt evidence map"
+      - "Residual risks and deferred non-goals"
+      - "Exact next task when not complete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: "codex/mp3-mp4-narration with existing uncommitted transcription-provider work; refresh before execution"
+  last_verification:
+    result: unknown
+    task: null
+    commands: []

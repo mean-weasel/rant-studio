@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import Database from 'better-sqlite3';
 
 import { RantApiError, RantClient } from '../../packages/api/src/index.ts';
 import type {
@@ -91,6 +92,12 @@ class SequenceProvider implements TranscriptProvider {
   async transcribe(): Promise<TranscriptProviderResult> {
     this.calls += 1;
     if (this.calls === 2) throw new Error('fixture provider unavailable');
+    if (this.calls === 3) {
+      return {
+        raw: { model: 'fixture-v1', words: [] },
+        words: [{ endMs: 50, startMs: 100, text: 'broken' }],
+      };
+    }
     return {
       raw: {
         model: 'fixture-v1',
@@ -153,9 +160,9 @@ test('intake preserves MP3 and MP4 sources while normalizing provider and render
   assert.equal(transcribed.transcript?.words[0]?.text, 'Captured');
   assert.deepEqual(provider.inputs, [
     {
-      checksum: withMp3.sourceAudio?.normalizedChecksum,
-      managedPath: withMp3.sourceAudio?.managedPath,
-      mimeType: 'audio/wav',
+      checksum: withMp3.sourceAudio?.checksum,
+      managedPath: withMp3.sourceAudio?.originalPath,
+      mimeType: 'audio/mpeg',
     },
   ]);
 
@@ -269,8 +276,29 @@ test('intake persists managed audio, raw provider evidence, words, retries, and 
     ['failed', 'succeeded'],
   );
 
+  await assert.rejects(
+    client.runTranscription(project.id, { expectedRevision: 3 }),
+    (error: unknown) =>
+      error instanceof RantApiError && error.code === 'INVALID_TRANSCRIPT',
+  );
+  const afterInvalidResult = await client.getIntake(project.id);
+  assert.deepEqual(
+    afterInvalidResult.attempts.map(({ status }) => status),
+    ['failed', 'failed', 'succeeded'],
+  );
+
   await service.close();
   store.close();
+
+  const interruptedDatabase = new Database(workspace.databasePath);
+  interruptedDatabase
+    .prepare(
+      `INSERT INTO transcription_attempts
+       (id, project_id, provider, status, raw_artifact_path, created_at, error_message)
+       VALUES ('interrupted-attempt', ?, 'fixture', 'running', NULL, ?, NULL)`,
+    )
+    .run(project.id, new Date().toISOString());
+  interruptedDatabase.close();
 
   const reopened = openProjectStore(workspace.databasePath, {
     importRoot: workspace.importRoot,
@@ -280,6 +308,16 @@ test('intake persists managed audio, raw provider evidence, words, retries, and 
     reopened.getIntakeProject(project.id).transcript?.words.length,
     2,
   );
+  const recoveredAttempt = reopened
+    .getIntakeProject(project.id)
+    .attempts.find(({ id }) => id === 'interrupted-attempt');
+  assert.deepEqual(recoveredAttempt, {
+    errorMessage: 'Service restarted before transcription completed',
+    id: 'interrupted-attempt',
+    provider: 'fixture',
+    rawArtifactPath: null,
+    status: 'failed',
+  });
   reopened.close();
 });
 

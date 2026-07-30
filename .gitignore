@@ -11,4 +11,5 @@ test-results/
 .rant-studio/
 .vite/
 .eslintcache
+.env.local
 playwright-report/

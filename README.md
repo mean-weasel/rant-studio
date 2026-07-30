@@ -25,7 +25,53 @@ npm run service
 ```
 
 The service binds to `127.0.0.1`, creates `.rant-studio/`, and prints its local
-URL plus separate human and agent credentials. Leave it running.
+URL plus a restricted credential for external agents. The local owner app and
+owner-operated CLI connect automatically without a startup token. Leave the
+service running.
+
+The default transcription provider is a two-word deterministic fixture for
+offline development. For real word timestamps, start the service with one of:
+
+```bash
+# Option 1: copy .env.example to the ignored .env.local and edit it.
+cp .env.example .env.local
+
+# Option 2: configure the current shell directly.
+# OpenAI Whisper (25 MB maximum input)
+export RANT_STUDIO_TRANSCRIPTION_PROVIDER=openai
+export OPENAI_API_KEY='<server-only key>'
+
+# Groq Cloud Whisper
+export RANT_STUDIO_TRANSCRIPTION_PROVIDER=groq
+export GROQ_API_KEY='<server-only key>'
+
+# Optional ISO-639-1 language hint, such as en
+export RANT_STUDIO_TRANSCRIPTION_LANGUAGE=en
+
+npm run service
+```
+
+Provider credentials can stay in the service environment or be persisted in
+macOS Keychain. They are never returned to the browser or CLI agent, project
+history, or transcript artifact. Rant Studio uploads the preserved source file
+to the selected provider so compressed MP3 and MP4 narration does not expand
+into the larger PCM working copy first.
+
+For persistent local QA, the owner CLI needs only the printed loopback URL:
+
+```bash
+export RANT_STUDIO_URL=http://127.0.0.1:4174
+npm run rant -- provider configure openai
+npm run rant -- provider test openai
+```
+
+The configure command uses a hidden prompt and stores the key in macOS
+Keychain. Add `--stdin` only for non-interactive automation. The raw key is
+never accepted as an argument or returned by the service. `provider list
+--json` is safe for agents. Owner commands run locally without a credential;
+configure, test, select, and remove reject explicitly credentialed agent
+sessions. Environment configuration remains the highest-precedence
+temporary/CI override.
 
 In a second terminal:
 
@@ -33,8 +79,8 @@ In a second terminal:
 npm run dev
 ```
 
-Open `http://rant-studio.localhost:4173/?mode=intake`, enter the printed service URL and
-human credential, then choose **Connect**.
+Open `http://rant-studio.localhost:4173/?mode=intake`. The local owner app
+connects automatically.
 
 For an external agent CLI:
 
@@ -45,8 +91,8 @@ npm run rant -- help
 ```
 
 The CLI help names every required project, task, revision, and target argument,
-plus recovery for stale revisions and interrupted claims. Do not give an agent
-the human credential.
+plus recovery for stale revisions and interrupted claims. External agents
+should always use the printed restricted agent credential.
 
 ## Fresh project walkthrough
 
@@ -55,11 +101,13 @@ No JSON or SQLite editing is required:
 1. Create a project in the browser.
 2. Upload WAV or MP3 narration, or an MP4 video with an audio stream. Rant
    Studio preserves the original and creates a managed PCM WAV working copy.
-3. Choose **Transcribe deterministically**. Timestamp JSON import is optional.
+3. Choose **Transcribe narration**. Timestamp JSON import is optional.
 4. Open editorial, correct a timestamped word if needed, and queue a
    revision-bound shot-planning task. In the external CLI, attach an agent,
-   claim that task, and use `proposal submit-chronological`; the browser never
-   receives the agent credential and updates when the result arrives.
+   claim that task, inspect it with `proposal context`, author a semantic
+   proposal file, and submit it with `proposal submit --revision <n>
+--transcript <id> --shots-file <file>`; the browser never receives the agent
+   credential and updates when the result arrives.
 5. Review, adjust, reject/regenerate, and explicitly accept the staged result.
 6. Open the Production Shot Ledger to reorder, split, merge, cut, checkpoint,
    undo, or restore.
@@ -93,12 +141,13 @@ renders never replace a prior successful artifact.
 
 ## Provider boundary and privacy
 
-V1 includes a deterministic transcription adapter and validated timestamp JSON
-import. A real OpenAI/Grok adapter belongs behind
-`packages/transcription/src/index.ts`; keep provider keys in the process
-environment. Credential- or secret-shaped values are rejected from project
-history. The service is loopback-only and does not publish to YouTube, search
-the web, or call image/video generation providers.
+V1 includes deterministic, OpenAI Whisper, and Groq Cloud Whisper adapters plus
+validated timestamp JSON import. OpenAI uses `whisper-1`; Groq uses
+`whisper-large-v3-turbo`. Both request word timestamps required by the editing
+pipeline. Keep provider keys in macOS Keychain or the service environment.
+Credential- or secret-shaped values are rejected from project history. The
+service is loopback-only and does not publish to YouTube, search the web, or
+call image/video generation providers.
 
 ## Verification
 
@@ -139,6 +188,10 @@ reproduce the complete CI contract locally.
   invalid shot range.
 - FFmpeg errors: confirm both FFmpeg and ffprobe are on `PATH`; the last valid
   artifact remains untouched.
+- Provider startup errors: set the API key matching
+  `RANT_STUDIO_TRANSCRIPTION_PROVIDER`. OpenAI rejects inputs over 25 MB; use a
+  compressed narration source or select Groq, whose plan-specific upload limit
+  is enforced by its API.
 - V1 accepts WAV/MP3/MP4 narration and PNG/MP4 visuals. It has one local creator, hard
   cuts, deterministic local rendering, and no hosted collaboration, recording,
   web search, generation provider, YouTube publishing, or mobile-native app.

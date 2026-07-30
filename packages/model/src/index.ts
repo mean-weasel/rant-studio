@@ -66,6 +66,20 @@ export type IntakeProjectSnapshot = ProjectSnapshot & {
 
 export type EditorialWord = TranscriptWord;
 
+export type {
+  ShotPlanningBrief,
+  ShotPlanningMode,
+  ShotPlanningRequest,
+  RevisionBoundShotProposalSubmission,
+  ShotProposalDraft,
+  ShotProposalSubmission,
+  StagedShotProposal,
+} from './semantic-planning.js';
+export {
+  normalizeShotPlanningRequest,
+  shotPlanningInstruction,
+} from './semantic-planning.js';
+
 export type EditorialProjectSnapshot = ProjectSnapshot & {
   rawTranscript: { id: string; revision: number; words: EditorialWord[] };
   effectiveTranscript: { id: string; revision: number; words: EditorialWord[] };
@@ -74,6 +88,8 @@ export type EditorialProjectSnapshot = ProjectSnapshot & {
     status: string;
     instruction: string;
     baseRevision: number;
+    pacing: string;
+    planning: import('./semantic-planning.js').ShotPlanningRequest | null;
   }>;
   proposals: Array<{
     id: string;
@@ -83,12 +99,9 @@ export type EditorialProjectSnapshot = ProjectSnapshot & {
     constraints: Record<string, unknown>;
     baseProjectRevision: number;
     baseTranscriptRevisionId: string;
-    shots: Array<{
-      endWordOrdinal: number;
-      rationale: string;
-      startWordOrdinal: number;
-      theme: string;
-    }>;
+    shotCountRationale: string | null;
+    shots: import('./semantic-planning.js').StagedShotProposal[];
+    summary: string | null;
   }>;
   shots: Array<{
     id: string;
@@ -167,6 +180,8 @@ export type ActivitySnapshot = ProjectSnapshot & {
     instruction: string;
     shotIds: string[];
     baseRevision: number;
+    pacing: string;
+    planning: import('./semantic-planning.js').ShotPlanningRequest | null;
     resultRevision: number | null;
     retryOfTaskId: string | null;
     status: AgentTaskStatus;

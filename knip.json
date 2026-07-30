@@ -14,6 +14,7 @@
   "project": ["{src,apps,packages,tests}/**/*.{ts,tsx}", "*.{js,mjs,ts}"],
   "ignore": ["docs/**"],
   "ignoreBinaries": ["ffmpeg"],
+  "ignoreUnresolved": ["/usr/bin/expect", "/usr/bin/security"],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true

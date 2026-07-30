@@ -1,5 +1,5 @@
 import { execFile, spawnSync } from 'node:child_process';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -118,19 +118,14 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
   let projectId = '';
 
   try {
-    await page.goto('/?mode=intake');
-    await page.getByLabel('Local service URL').fill(service.url);
-    await page.getByLabel('Local credential').fill(humanCredential.token);
-    await page.getByRole('button', { name: 'Connect' }).click();
+    await page.goto(`/?mode=intake&service=${encodeURIComponent(service.url)}`);
     await page.getByLabel('Project name').fill('Fresh browser CLI oracle');
     await page.getByRole('button', { name: 'Create project' }).click();
     projectId = (await page.locator('.intake-project code').textContent())!;
 
     await page.getByLabel('Narration file').setInputFiles(narrationPath);
     await page.getByRole('button', { name: 'Upload narration' }).click();
-    await page
-      .getByRole('button', { name: 'Transcribe deterministically' })
-      .click();
+    await page.getByRole('button', { name: 'Transcribe narration' }).click();
     await page
       .getByRole('button', { name: 'Open editorial workspace' })
       .click();
@@ -165,13 +160,47 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
       '--session',
       session.id,
     ]);
-    await runCli(service.url, agentCredential.token, [
+    const proposalContext = await runCli(service.url, agentCredential.token, [
       'proposal',
-      'submit-chronological',
+      'context',
       projectId,
       proposalTask.id,
-      '--shots',
-      '2',
+    ]);
+    const proposalPath = join(root, 'semantic-shot-proposal.json');
+    await writeFile(
+      proposalPath,
+      JSON.stringify({
+        shots: [
+          {
+            endWordOrdinal: 0,
+            id: 'a1da8d4e-79ee-49f2-a446-86303227ef5d',
+            rationale: 'Keep the corrected opening claim distinct.',
+            startWordOrdinal: 0,
+            theme: 'Corrected premise',
+          },
+          {
+            endWordOrdinal: 1,
+            id: 'fc622c2d-6466-4591-90de-8cdab17cd8c2',
+            rationale: 'Let the studio name land as the closing beat.',
+            startWordOrdinal: 1,
+            theme: 'Studio payoff',
+          },
+        ],
+        summary:
+          'Two specific beats preserve the corrected premise and its payoff.',
+      }),
+    );
+    await runCli(service.url, agentCredential.token, [
+      'proposal',
+      'submit',
+      projectId,
+      proposalTask.id,
+      '--revision',
+      String(proposalContext.baseProjectRevision),
+      '--transcript',
+      String(proposalContext.baseTranscriptRevisionId),
+      '--shots-file',
+      proposalPath,
     ]);
     await expect(
       page.getByText('Agent result · ready for review'),
@@ -330,9 +359,6 @@ test('fresh browser and executable CLI complete the V1 oracle with restart and s
     store.close();
     store = openProjectStore(databasePath, { managedRoot });
     service = await startLocalService({ port: originalPort, store });
-    await page.getByLabel('Local service URL').fill(service.url);
-    await page.getByLabel('Local credential').fill(humanCredential.token);
-    await page.getByRole('button', { name: 'Connect' }).click();
     await page.getByLabel('Existing project ID').fill(projectId);
     await page.getByRole('button', { name: 'Open existing project' }).click();
     await expect(

@@ -53,10 +53,7 @@ async function openScaleLedger(page: Page) {
   const service = await startLocalService({ port: 0, store });
   const words = scaleWords();
 
-  await page.goto('/?mode=intake');
-  await page.getByLabel('Local service URL').fill(service.url);
-  await page.getByLabel('Local credential').fill(humanCredential.token);
-  await page.getByRole('button', { name: 'Connect' }).click();
+  await page.goto(`/?mode=intake&service=${encodeURIComponent(service.url)}`);
   await page.getByLabel('Project name').fill('Fifteen Minute Scale');
   await page.getByRole('button', { name: 'Create project' }).click();
   await page.getByLabel('Narration file').setInputFiles({

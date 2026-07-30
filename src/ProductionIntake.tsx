@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { RantApiError, RantClient } from '../packages/api/src/index';
 import type { IntakeProjectSnapshot } from '../packages/model/src/index';
 import { ProductionEditorial } from './ProductionEditorial';
+import { ProviderSettings } from './ProviderSettings';
 import { TranscriptNavigator } from './TranscriptNavigator';
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -26,9 +27,12 @@ function messageFor(error: unknown): string {
 }
 
 export function ProductionIntake() {
-  const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:4174');
-  const [credential, setCredential] = useState('');
-  const [connected, setConnected] = useState(false);
+  const baseUrl = useMemo(
+    () =>
+      new URLSearchParams(window.location.search).get('service') ??
+      'http://127.0.0.1:4174',
+    [],
+  );
   const [projectName, setProjectName] = useState('');
   const [existingProjectId, setExistingProjectId] = useState('');
   const [project, setProject] = useState<IntakeProjectSnapshot | null>(null);
@@ -37,13 +41,10 @@ export function ProductionIntake() {
     '{\n  "words": [\n    { "text": "Hello", "startMs": 0, "endMs": 500 }\n  ]\n}',
   );
   const [status, setStatus] = useState(
-    'Connect to the loopback service to begin.',
+    'Local workspace ready. Create or open a project.',
   );
   const [busy, setBusy] = useState(false);
-  const client = useMemo(
-    () => new RantClient({ baseUrl, credential }),
-    [baseUrl, credential],
-  );
+  const client = useMemo(() => new RantClient({ baseUrl }), [baseUrl]);
   const handleRevision = useCallback((revision: number) => {
     setProject((current) => (current ? { ...current, revision } : current));
   }, []);
@@ -139,42 +140,13 @@ export function ProductionIntake() {
         <a href="/">Open UX prototype</a>
       </header>
 
-      {!connected ? (
-        <section className="intake-card" aria-labelledby="connection-heading">
-          <h2 id="connection-heading">Local service</h2>
-          <label>
-            Local service URL
-            <input
-              value={baseUrl}
-              onChange={(event) => setBaseUrl(event.target.value)}
-            />
-          </label>
-          <label>
-            Local credential
-            <input
-              type="password"
-              value={credential}
-              onChange={(event) => setCredential(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            disabled={!baseUrl || !credential}
-            onClick={() => {
-              setConnected(true);
-              setStatus('Connected. Create or open a project.');
-            }}
-          >
-            Connect
-          </button>
-        </section>
-      ) : null}
-
       <p className="intake-status" role="status" aria-live="polite">
         {status}
       </p>
 
-      {connected && !project ? (
+      <ProviderSettings baseUrl={baseUrl} />
+
+      {!project ? (
         <div className="intake-grid">
           <section
             className="intake-card"
@@ -289,8 +261,8 @@ export function ProductionIntake() {
             >
               <h2 id="transcribe-heading">2 · Transcript</h2>
               <p>
-                Run the deterministic adapter, or import provider-compatible
-                JSON. Retries create new attempts.
+                Run the configured transcription provider, or import
+                provider-compatible JSON. Retries create new attempts.
               </p>
               <button
                 type="button"
@@ -303,7 +275,7 @@ export function ProductionIntake() {
                   )
                 }
               >
-                Transcribe deterministically
+                Transcribe narration
               </button>
               <details>
                 <summary>Import timestamp JSON</summary>

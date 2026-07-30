@@ -12,6 +12,8 @@ import type {
   ProjectOperation,
   ProjectSnapshot,
   RenderJobSnapshot,
+  RevisionBoundShotProposalSubmission,
+  ShotPlanningRequest,
   TranscriptWord,
 } from '../../model/src/index.ts';
 
@@ -35,7 +37,7 @@ export type LedgerOperationInput =
 
 type ClientOptions = {
   baseUrl: string;
-  credential: string;
+  credential?: string;
   fetch?: typeof globalThis.fetch;
 };
 
@@ -51,13 +53,15 @@ export class RantApiError extends Error {
 }
 
 export class RantClient {
+  readonly #authorization: Record<string, string>;
   readonly #baseUrl: string;
-  readonly #credential: string;
   readonly #fetch: typeof globalThis.fetch;
 
   constructor(options: ClientOptions) {
+    this.#authorization = options.credential
+      ? { authorization: `Bearer ${options.credential}` }
+      : {};
     this.#baseUrl = options.baseUrl.replace(/\/$/, '');
-    this.#credential = options.credential;
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis);
   }
 
@@ -165,7 +169,9 @@ export class RantClient {
   async createProposalTask(
     projectId: string,
     input: {
-      constraints: Record<string, unknown>;
+      constraints: Record<string, unknown> & {
+        planning?: ShotPlanningRequest;
+      };
       expectedRevision: number;
       instruction: string;
       pacing: string;
@@ -200,20 +206,16 @@ export class RantClient {
   async submitShotProposal(
     projectId: string,
     taskId: string,
-    input: {
-      baseProjectRevision: number;
-      baseTranscriptRevisionId: string;
-      shots: Array<{
-        endWordOrdinal: number;
-        rationale: string;
-        startWordOrdinal: number;
-        theme: string;
-      }>;
-    },
+    input: RevisionBoundShotProposalSubmission,
   ): Promise<{ id: string; status: string }> {
+    const shots = structuredClone(input.shots);
+    Object.assign(shots[0] ?? {}, {
+      proposalSummary: input.summary,
+      shotCountRationale: input.shotCountRationale,
+    });
     return this.#request(
       `/v1/projects/${encodeURIComponent(projectId)}/proposal-tasks/${encodeURIComponent(taskId)}/proposals`,
-      { body: JSON.stringify(input), method: 'POST' },
+      { body: JSON.stringify({ ...input, shots }), method: 'POST' },
     );
   }
 
@@ -461,7 +463,7 @@ export class RantClient {
   ): Promise<Blob> {
     const response = await this.#fetch(
       `${this.#baseUrl}/v1/projects/${encodeURIComponent(projectId)}/previews/${encodeURIComponent(previewId)}`,
-      { headers: { authorization: `Bearer ${this.#credential}` } },
+      { headers: this.#authorization },
     );
     if (!response.ok) {
       throw new RantApiError(
@@ -483,7 +485,7 @@ export class RantClient {
         const response = await this.#fetch(`${this.#baseUrl}/v1/events`, {
           headers: {
             accept: 'text/event-stream',
-            authorization: `Bearer ${this.#credential}`,
+            ...this.#authorization,
           },
           signal: controller.signal,
         });
@@ -599,9 +601,7 @@ export class RantClient {
     const response = await this.#fetch(
       `${this.#baseUrl}/v1/projects/${encodeURIComponent(projectId)}/artifacts/${encodeURIComponent(artifactId)}`,
       {
-        headers: {
-          authorization: `Bearer ${this.#credential}`,
-        },
+        headers: this.#authorization,
       },
     );
     if (!response.ok) {
@@ -631,7 +631,7 @@ export class RantClient {
     const response = await this.#fetch(`${this.#baseUrl}${path}`, {
       ...init,
       headers: {
-        authorization: `Bearer ${this.#credential}`,
+        ...this.#authorization,
         'content-type': 'application/json',
         ...init.headers,
       },

@@ -7,10 +7,49 @@ applies only additive migrations, reclassifies interrupted render jobs as
 `waiting`, and listens only on `127.0.0.1`. Stop with Ctrl-C so HTTP and SQLite
 close cleanly.
 
-Treat the printed credentials as local secrets. Human credentials have
-protected mutation authority; agent credentials are intentionally restricted.
-Revoke or rotate credentials by creating a new local data root until a
-credential-management screen is added.
+Real transcription is opt-in and server-side:
+
+```bash
+cp .env.example .env.local
+# Edit .env.local, which is ignored by Git, then:
+npm run service
+
+# Or configure the current shell:
+RANT_STUDIO_TRANSCRIPTION_PROVIDER=openai \
+OPENAI_API_KEY='<server-only key>' \
+RANT_STUDIO_TRANSCRIPTION_LANGUAGE=en \
+npm run service
+```
+
+Use `RANT_STUDIO_TRANSCRIPTION_PROVIDER=groq` with `GROQ_API_KEY` for Groq
+Cloud Whisper. Omit `RANT_STUDIO_TRANSCRIPTION_LANGUAGE` for automatic
+language detection. Without a configured remote provider, the service uses
+its deterministic offline fixture.
+
+For persistent QA, start the service once and use its loopback URL in a second
+terminal. Local owner commands do not require a startup token:
+
+```bash
+export RANT_STUDIO_URL=http://127.0.0.1:4174
+npm run rant -- provider configure openai
+npm run rant -- provider test openai
+npm run rant -- provider list --json
+```
+
+`provider configure` uses a hidden prompt. For non-interactive local
+automation, add `--stdin` and pipe the key through standard input; do not place
+it in the command itself. The key is stored in macOS Keychain. SQLite keeps
+provider status and selection metadata only. Use `provider configure` again to
+rotate, `provider select` to change the active persisted provider, and
+`provider remove` to delete its Keychain item. An external agent must set the
+printed `RANT_STUDIO_CREDENTIAL`; agent credentials may run `provider list`,
+but provider changes remain unavailable to them.
+
+Treat the printed agent credential as a local secret. The local owner app is
+authorized only from the exact Rant Studio origin, and owner CLI calls are
+accepted only by the loopback-bound service without a browser origin. Agent
+credentials are intentionally restricted and remain separate from
+transcription-provider keys.
 
 Narration intake accepts WAV, MP3, and MP4 files. MP4 narration must contain a
 decodable audio stream. The original file is retained under managed project
