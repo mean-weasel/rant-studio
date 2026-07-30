@@ -1,19 +1,34 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
 import { runCli } from '../../apps/cli/src/index.ts';
+import { TranscriptionCredentialRegistry } from '../../apps/service/src/credential-store.ts';
+import { openProviderMetadataStore } from '../../apps/service/src/provider-metadata.ts';
 import { startLocalService } from '../../apps/service/src/server.ts';
 import { openProjectStore } from '../../apps/service/src/store.ts';
 import { RantClient } from '../../packages/api/src/index.ts';
+import { MemorySecretStore } from '../helpers/memory-secret-store.ts';
 
 function ffmpeg(args: string[]) {
   const result = spawnSync('ffmpeg', args, { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
+}
+
+async function assertTreeExcludes(root: string, secret: string): Promise<void> {
+  const entries = await readdir(root, { withFileTypes: true });
+  for (const entry of entries) {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) {
+      await assertTreeExcludes(path, secret);
+    } else if (entry.isFile()) {
+      assert.equal((await readFile(path)).includes(Buffer.from(secret)), false);
+    }
+  }
 }
 
 test('fresh full oracle shares browser CLI truth and publishes receipt-backed dual artifacts', async () => {
@@ -56,6 +71,24 @@ test('fresh full oracle shares browser CLI truth and publishes receipt-backed du
   }
 
   const store = openProjectStore(databasePath, { managedRoot });
+  const metadata = openProviderMetadataStore(databasePath);
+  const secrets = new MemorySecretStore();
+  const canary = `release-credential-${randomUUID()}`;
+  const configuredRegistry = new TranscriptionCredentialRegistry({
+    metadata,
+    secretStore: secrets,
+  });
+  const configured = await configuredRegistry.configure({
+    credential: canary,
+    provider: 'groq',
+  });
+  assert.equal(configured.activeProvider, 'groq');
+  assert.equal(JSON.stringify(configured).includes(canary), false);
+  const serviceRegistry = new TranscriptionCredentialRegistry({
+    environment: { RANT_STUDIO_TRANSCRIPTION_PROVIDER: 'deterministic' },
+    metadata,
+    secretStore: secrets,
+  });
   const humanCredential = store.issueCredential({
     role: 'human',
     scopes: ['project:*'],
@@ -70,7 +103,11 @@ test('fresh full oracle shares browser CLI truth and publishes receipt-backed du
       'asset:recommend',
     ],
   });
-  const service = await startLocalService({ port: 0, store });
+  const service = await startLocalService({
+    credentialRegistry: serviceRegistry,
+    port: 0,
+    store,
+  });
   const human = new RantClient({
     baseUrl: service.url,
     credential: humanCredential.token,
@@ -259,9 +296,30 @@ test('fresh full oracle shares browser CLI truth and publishes receipt-backed du
   );
 
   await service.close();
+  metadata.close();
   store.close();
   const reopenedStore = openProjectStore(databasePath, { managedRoot });
+  const reopenedMetadata = openProviderMetadataStore(databasePath);
+  const restartedRegistry = new TranscriptionCredentialRegistry({
+    metadata: reopenedMetadata,
+    secretStore: secrets,
+  });
+  assert.deepEqual(
+    {
+      activeProvider: (await restartedRegistry.snapshot()).activeProvider,
+      providerName: (await restartedRegistry.resolveProvider()).name,
+    },
+    {
+      activeProvider: 'groq',
+      providerName: 'groq:whisper-large-v3-turbo',
+    },
+  );
   const reopenedService = await startLocalService({
+    credentialRegistry: new TranscriptionCredentialRegistry({
+      environment: { RANT_STUDIO_TRANSCRIPTION_PROVIDER: 'deterministic' },
+      metadata: reopenedMetadata,
+      secretStore: secrets,
+    }),
     port: 0,
     store: reopenedStore,
   });
@@ -286,6 +344,10 @@ test('fresh full oracle shares browser CLI truth and publishes receipt-backed du
   );
   assert.equal(JSON.parse(reopenedOutput.at(-1)!).revision, selected.revision);
   await reopenedService.close();
+  await assertTreeExcludes(root, canary);
+  assert.equal(JSON.stringify(activity).includes(canary), false);
+  assert.equal(JSON.stringify(artifactEvidence).includes(canary), false);
+  reopenedMetadata.close();
   reopenedStore.close();
 
   process.stdout.write(

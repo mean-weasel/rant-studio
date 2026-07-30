@@ -326,6 +326,47 @@ SET original_path = managed_path,
 WHERE original_path IS NULL OR normalized_checksum IS NULL;
 `;
 
+const migrationTen = `
+CREATE TABLE transcription_provider_credentials (
+  provider TEXT PRIMARY KEY CHECK (provider IN ('openai', 'xai')),
+  keychain_account TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('configured', 'valid', 'invalid')),
+  selected INTEGER NOT NULL DEFAULT 0 CHECK (selected IN (0, 1)),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_validated_at TEXT
+);
+CREATE UNIQUE INDEX transcription_provider_one_selected
+  ON transcription_provider_credentials (selected)
+  WHERE selected = 1;
+`;
+
+const migrationEleven = `
+DROP INDEX IF EXISTS transcription_provider_one_selected;
+ALTER TABLE transcription_provider_credentials
+  RENAME TO transcription_provider_credentials_v10;
+CREATE TABLE transcription_provider_credentials (
+  provider TEXT PRIMARY KEY CHECK (provider IN ('openai', 'groq')),
+  keychain_account TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('configured', 'valid', 'invalid')),
+  selected INTEGER NOT NULL DEFAULT 0 CHECK (selected IN (0, 1)),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_validated_at TEXT
+);
+INSERT INTO transcription_provider_credentials
+  (provider, keychain_account, status, selected, created_at, updated_at,
+   last_validated_at)
+SELECT provider, keychain_account, status, selected, created_at, updated_at,
+       last_validated_at
+FROM transcription_provider_credentials_v10
+WHERE provider = 'openai';
+DROP TABLE transcription_provider_credentials_v10;
+CREATE UNIQUE INDEX transcription_provider_one_selected
+  ON transcription_provider_credentials (selected)
+  WHERE selected = 1;
+`;
+
 export function applyMigrations(database: BetterSqlite3.Database): void {
   database.exec(`
     PRAGMA foreign_keys = ON;
@@ -345,6 +386,8 @@ export function applyMigrations(database: BetterSqlite3.Database): void {
     { sql: migrationSeven, version: 7 },
     { sql: migrationEight, version: 8 },
     { sql: migrationNine, version: 9 },
+    { sql: migrationTen, version: 10 },
+    { sql: migrationEleven, version: 11 },
   ];
   for (const migration of migrations) {
     const applied = database

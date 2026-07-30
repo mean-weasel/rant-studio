@@ -45,10 +45,7 @@ test('production preview preflight export render rechecks stale authority and pl
   });
   const service = await startLocalService({ port: 0, store });
   try {
-    await page.goto('/?mode=intake');
-    await page.getByLabel('Local service URL').fill(service.url);
-    await page.getByLabel('Local credential').fill(humanCredential.token);
-    await page.getByRole('button', { name: 'Connect' }).click();
+    await page.goto(`/?mode=intake&service=${encodeURIComponent(service.url)}`);
     await page.getByLabel('Project name').fill('Browser Media');
     await page.getByRole('button', { name: 'Create project' }).click();
     await page.getByLabel('Narration file').setInputFiles({

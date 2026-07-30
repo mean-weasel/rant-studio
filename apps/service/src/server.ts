@@ -6,7 +6,6 @@ import type { AddressInfo } from 'node:net';
 
 import { renderProject } from '../../media-worker/src/index.ts';
 import {
-  AuthorityError,
   type OutputFormat,
   type ProjectEvent,
   type ProjectOperation,
@@ -15,35 +14,17 @@ import {
   DeterministicTranscriptProvider,
   type TranscriptProvider,
 } from '../../../packages/transcription/src/index.ts';
+import type { TranscriptionCredentialRegistry } from './credential-store.ts';
+import {
+  assertScope,
+  errorCode,
+  errorStatus,
+  handleProviderRoute,
+  handleProviderPreflight,
+  operationScopes,
+  providerOriginAllowed,
+} from './provider-routes.ts';
 import { ProjectStore, StoreError } from './store.ts';
-
-const operationScopes: Record<ProjectOperation, string> = {
-  accept_proposal: 'proposal:accept',
-  adjust_proposal: 'proposal:adjust',
-  add_note: 'note:add',
-  attach_candidate: 'asset:add',
-  change_output_settings: 'output:write',
-  change_shots: 'shot:write',
-  correct_transcript: 'transcript:write',
-  create_proposal_task: 'task:create',
-  create_project: 'project:create',
-  export_incomplete: 'export:incomplete',
-  import_transcript: 'transcript:write',
-  ingest_narration: 'audio:write',
-  recommend_candidate: 'asset:recommend',
-  reject_proposal: 'proposal:reject',
-  run_transcription: 'transcript:write',
-  select_visual: 'visual:select',
-  submit_proposal: 'proposal:write',
-};
-
-function assertScope(scopes: string[], required: string): void {
-  if (scopes.includes('project:*') || scopes.includes(required)) return;
-  throw new StoreError(
-    'FORBIDDEN',
-    `Credential requires the ${required} scope`,
-  );
-}
 
 function json(response: ServerResponse, status: number, value: unknown): void {
   response.writeHead(status, { 'content-type': 'application/json' });
@@ -62,67 +43,45 @@ async function readJson(
   >;
 }
 
-function statusFor(error: unknown): number {
-  if (error instanceof AuthorityError) return 403;
-  if (error instanceof StoreError) {
-    if (error.code === 'UNAUTHORIZED') return 401;
-    if (error.code === 'FORBIDDEN') return 403;
-    if (error.code === 'NOT_FOUND') return 404;
-    if (error.code === 'REVISION_CONFLICT') return 409;
-    if (
-      error.code === 'INVALID_INPUT' ||
-      error.code === 'INVALID_TRANSCRIPT' ||
-      error.code === 'INVALID_PROPOSAL' ||
-      error.code === 'SECRET_MATERIAL' ||
-      error.code === 'UNSAFE_PATH' ||
-      error.code === 'UNSUPPORTED_MEDIA' ||
-      error.code === 'PREFLIGHT_BLOCKED'
-    )
-      return 400;
-    if (error.code === 'PROVIDER_FAILED') return 502;
-    if (
-      error.code === 'DETACHED_AGENT' ||
-      error.code === 'INVALID_TASK_TRANSITION' ||
-      error.code === 'STALE_PROPOSAL' ||
-      error.code === 'STALE_TASK' ||
-      error.code === 'TASK_UNAVAILABLE' ||
-      error.code === 'PLACEHOLDER_APPROVAL_REQUIRED'
-    )
-      return 409;
-  }
-  return 500;
-}
-
-function codeFor(error: unknown): string {
-  if (error instanceof AuthorityError) return error.code;
-  if (error instanceof StoreError) return error.code;
-  return 'INTERNAL_ERROR';
-}
-
 export async function startLocalService(options: {
+  appOrigin?: string;
+  credentialRegistry?: TranscriptionCredentialRegistry;
   port?: number;
   provider?: TranscriptProvider;
   store: ProjectStore;
 }): Promise<{ close: () => Promise<void>; url: string }> {
+  const approvedAppOrigin =
+    options.appOrigin ?? 'http://rant-studio.localhost:4173';
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? '/', 'http://127.0.0.1');
       const requestOrigin = request.headers.origin;
       if (requestOrigin) {
-        const origin = new URL(requestOrigin);
         if (
-          origin.hostname === '127.0.0.1' ||
-          origin.hostname === 'localhost' ||
-          origin.hostname.endsWith('.localhost')
+          providerOriginAllowed({
+            approvedAppOrigin,
+            method: request.method,
+            pathname: url.pathname,
+            requestOrigin,
+          })
         ) {
           response.setHeader('access-control-allow-origin', requestOrigin);
           response.setHeader('vary', 'origin');
         }
       }
       if (request.method === 'OPTIONS') {
+        if (
+          handleProviderPreflight({
+            approvedAppOrigin,
+            pathname: url.pathname,
+            requestOrigin,
+            response,
+          })
+        )
+          return;
         response.writeHead(204, {
           'access-control-allow-headers': 'authorization, content-type',
-          'access-control-allow-methods': 'DELETE, GET, POST, OPTIONS',
+          'access-control-allow-methods': 'DELETE, GET, POST, PUT, OPTIONS',
         });
         response.end();
         return;
@@ -132,10 +91,40 @@ export async function startLocalService(options: {
         return;
       }
       const authorization = request.headers.authorization;
-      if (!authorization?.startsWith('Bearer ')) {
-        throw new StoreError('UNAUTHORIZED', 'Bearer credential required');
-      }
-      const identity = options.store.authenticate(authorization.slice(7));
+      const identity =
+        authorization !== undefined
+          ? authorization.startsWith('Bearer ')
+            ? options.store.authenticate(authorization.slice(7))
+            : (() => {
+                throw new StoreError(
+                  'UNAUTHORIZED',
+                  'Bearer credential required when authorization is provided',
+                );
+              })()
+          : requestOrigin === undefined || requestOrigin === approvedAppOrigin
+            ? {
+                actor: { id: 'local-owner', kind: 'human' as const },
+                credentialHash: 'local-owner',
+                scopes: ['project:*'],
+              }
+            : (() => {
+                throw new StoreError(
+                  'UNAUTHORIZED',
+                  `Local owner access requires origin ${approvedAppOrigin}`,
+                );
+              })();
+
+      if (
+        await handleProviderRoute({
+          approvedAppOrigin,
+          credentialRegistry: options.credentialRegistry,
+          identity,
+          request,
+          response,
+          url,
+        })
+      )
+        return;
 
       if (url.pathname === '/v1/events' && request.method === 'GET') {
         assertScope(identity.scopes, 'project:read');
@@ -949,7 +938,10 @@ export async function startLocalService(options: {
             actor: identity.actor,
             expectedRevision: Number(body.expectedRevision),
             projectId,
-            provider: options.provider ?? new DeterministicTranscriptProvider(),
+            provider:
+              (await options.credentialRegistry?.resolveProvider()) ??
+              options.provider ??
+              new DeterministicTranscriptProvider(),
           }),
         );
         return;
@@ -958,9 +950,9 @@ export async function startLocalService(options: {
         error: { code: 'NOT_FOUND', message: 'Route not found' },
       });
     } catch (error) {
-      json(response, statusFor(error), {
+      json(response, errorStatus(error), {
         error: {
-          code: codeFor(error),
+          code: errorCode(error),
           message: error instanceof Error ? error.message : 'Unknown error',
         },
       });

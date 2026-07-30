@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react';
 
 import { RantClient } from '../packages/api/src/index';
-import type { EditorialProjectSnapshot } from '../packages/model/src/index';
+import {
+  shotPlanningInstruction,
+  type EditorialProjectSnapshot,
+  type ShotPlanningRequest,
+} from '../packages/model/src/index';
 import { ProductionLedger } from './ProductionLedger';
+import { ShotPlanningControls } from './ShotPlanningControls';
 import { TranscriptNavigator } from './TranscriptNavigator';
 
 type Props = {
@@ -17,8 +22,6 @@ export function ProductionEditorial({ client, projectId, onRevision }: Props) {
   );
   const [selectedWord, setSelectedWord] = useState('');
   const [replacement, setReplacement] = useState('');
-  const [pacing, setPacing] = useState('Standard');
-  const [shotCount, setShotCount] = useState(3);
   const [status, setStatus] = useState(
     'Load the editorial workspace to begin.',
   );
@@ -82,16 +85,19 @@ export function ProductionEditorial({ client, projectId, onRevision }: Props) {
     }
   }
 
-  async function askAgent() {
+  async function askAgent(input: {
+    pacing: string;
+    planning: ShotPlanningRequest;
+  }) {
     if (!editorial) return;
     setBusy(true);
     setStatus('Agent task queued…');
     try {
       const task = await client.createProposalTask(projectId, {
-        constraints: { targetShotCount: shotCount },
+        constraints: { planning: input.planning },
         expectedRevision: editorial.revision,
-        instruction: `Create ${shotCount} chronological commentary shots.`,
-        pacing,
+        instruction: shotPlanningInstruction(input.planning, input.pacing),
+        pacing: input.pacing,
       });
       setStatus(
         `External task ${task.id} queued. An attached CLI agent must claim and submit it.`,
@@ -127,6 +133,9 @@ export function ProductionEditorial({ client, projectId, onRevision }: Props) {
 
   const readyProposal = editorial?.proposals.find(
     (proposal) => proposal.status === 'ready',
+  );
+  const readyTask = editorial?.tasks.find(
+    (task) => task.id === readyProposal?.taskId,
   );
 
   if (!editorial) {
@@ -229,45 +238,14 @@ export function ProductionEditorial({ client, projectId, onRevision }: Props) {
         </div>
       </section>
 
-      <section className="intake-card">
-        <div className="proposal-controls">
-          <div>
-            <h3>Agent connection</h3>
-            <p>
-              The browser queues revision-bound work only. An external CLI agent
-              attaches, claims, and submits the proposal.
-            </p>
-          </div>
-          <label>
-            Pacing
-            <select
-              value={pacing}
-              onChange={(event) => setPacing(event.target.value)}
-            >
-              <option>Relaxed</option>
-              <option>Standard</option>
-              <option>Punchy</option>
-            </select>
-          </label>
-          <label>
-            Starting shots
-            <input
-              type="number"
-              min={1}
-              max={Math.max(1, editorial.effectiveTranscript.words.length)}
-              value={shotCount}
-              onChange={(event) => setShotCount(Number(event.target.value))}
-            />
-          </label>
-          <button type="button" disabled={busy} onClick={askAgent}>
-            {editorial.proposals.some(
-              (proposal) => proposal.status === 'rejected',
-            )
-              ? 'Queue regenerated external proposal'
-              : 'Queue external shot proposal'}
-          </button>
-        </div>
-      </section>
+      <ShotPlanningControls
+        disabled={busy}
+        hasRejectedProposal={editorial.proposals.some(
+          (proposal) => proposal.status === 'rejected',
+        )}
+        maxShots={editorial.effectiveTranscript.words.length}
+        onQueue={(input) => void askAgent(input)}
+      />
 
       {readyProposal ? (
         <section className="proposal-review" aria-labelledby="proposal-heading">
@@ -278,9 +256,26 @@ export function ProductionEditorial({ client, projectId, onRevision }: Props) {
                 {readyProposal.shots.length} chronological shots ·{' '}
                 {readyProposal.pacing}
               </h3>
+              <p>
+                {readyTask?.planning?.mode === 'outline'
+                  ? 'Mapped to creator outline'
+                  : 'Agent-discovered structure'}
+                {' · '}task {readyProposal.taskId}
+              </p>
             </div>
             <strong>Human approval required</strong>
           </header>
+          {readyProposal.summary || readyProposal.shotCountRationale ? (
+            <aside className="intake-card">
+              {readyProposal.summary ? <p>{readyProposal.summary}</p> : null}
+              {readyProposal.shotCountRationale ? (
+                <p>
+                  <strong>Shot-count decision:</strong>{' '}
+                  {readyProposal.shotCountRationale}
+                </p>
+              ) : null}
+            </aside>
+          ) : null}
           <div className="proposal-grid proposal-grid-head" aria-hidden="true">
             <span>Shot</span>
             <span>Transcript chunk</span>
@@ -294,10 +289,12 @@ export function ProductionEditorial({ client, projectId, onRevision }: Props) {
             return (
               <article
                 className="proposal-grid"
-                key={`${readyProposal.id}-${index}`}
+                data-proposal-shot-id={shot.id}
+                key={shot.id}
               >
                 <div>
                   <strong>Shot {index + 1}</strong>
+                  <small>{shot.id}</small>
                   <small>
                     {words[0]?.startMs}–{words.at(-1)?.endMs} ms
                   </small>
@@ -308,6 +305,11 @@ export function ProductionEditorial({ client, projectId, onRevision }: Props) {
                 <div>
                   <strong>{shot.theme}</strong>
                   <p>{shot.rationale}</p>
+                  {shot.visualBrief ? (
+                    <p>
+                      <strong>Visual idea:</strong> {shot.visualBrief}
+                    </p>
+                  ) : null}
                   {index < readyProposal.shots.length - 1 ? (
                     <button
                       type="button"

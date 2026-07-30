@@ -37,6 +37,8 @@ import {
   type RenderArtifactSnapshot,
   type RenderJobSnapshot,
   type RenderPlan,
+  type ShotProposalDraft,
+  type StagedShotProposal,
   type VisualFit,
 } from '../../../packages/model/src/index.ts';
 import type {
@@ -54,6 +56,16 @@ import {
   type ManagedNarration,
   type VisualMedia,
 } from './narration.ts';
+import { recoverInterruptedWork } from './recovery.ts';
+import {
+  assertProposalAdjustment,
+  assertProposalMatchesPlanning,
+  normalizeProposalSubmission,
+  planningFromConstraints,
+  readProposalOperations,
+  SemanticPlanningError,
+  writeProposalOperations,
+} from './semantic-planning.ts';
 
 export type Credential = {
   role: ActorKind;
@@ -130,9 +142,11 @@ type LedgerVersionRow = {
 
 type AgentTaskRow = {
   base_revision: number;
+  constraints_json: string;
   id: string;
   instruction: string;
   kind: string;
+  pacing: string;
   parent_task_id: string | null;
   result_revision: number | null;
   status: AgentTaskStatus;
@@ -236,16 +250,7 @@ export class ProjectStore {
     mkdirSync(this.#managedRoot, { recursive: true });
     mkdirSync(this.#importRoot, { recursive: true });
     applyMigrations(this.#database);
-    const recoveredAt = new Date().toISOString();
-    this.#database
-      .prepare(
-        `UPDATE jobs
-         SET status = 'waiting',
-             error_message = 'Service restarted while render was running',
-             updated_at = ?
-         WHERE status = 'running'`,
-      )
-      .run(recoveredAt);
+    recoverInterruptedWork(this.#database);
   }
 
   close(): void {
@@ -572,12 +577,21 @@ export class ProjectStore {
       )
       .run(randomUUID(), jobId, now);
 
-    let result: Awaited<ReturnType<TranscriptProvider['transcribe']>>;
     try {
-      result = await input.provider.transcribe({
-        checksum: current.sourceAudio.normalizedChecksum,
-        managedPath: current.sourceAudio.managedPath,
-        mimeType: current.sourceAudio.normalizedMimeType,
+      const result = await input.provider.transcribe({
+        checksum: current.sourceAudio.checksum,
+        managedPath: current.sourceAudio.originalPath,
+        mimeType: current.sourceAudio.mimeType,
+      });
+      return this.#storeTranscript({
+        actor: input.actor,
+        attemptId,
+        expectedRevision: input.expectedRevision,
+        jobId,
+        projectId: input.projectId,
+        provider: input.provider.name,
+        raw: result.raw,
+        words: result.words,
       });
     } catch (error) {
       const message =
@@ -595,18 +609,9 @@ export class ProjectStore {
           "UPDATE job_attempts SET status = 'failed', detail_json = ? WHERE job_id = ?",
         )
         .run(JSON.stringify({ message }), jobId);
+      if (error instanceof StoreError) throw error;
       throw new StoreError('PROVIDER_FAILED', message);
     }
-    return this.#storeTranscript({
-      actor: input.actor,
-      attemptId,
-      expectedRevision: input.expectedRevision,
-      jobId,
-      projectId: input.projectId,
-      provider: input.provider.name,
-      raw: result.raw,
-      words: result.words,
-    });
   }
 
   getIntakeProject(projectId: string): IntakeProjectSnapshot {
@@ -999,6 +1004,17 @@ export class ProjectStore {
       );
     }
     this.#currentEditorialTranscript(input.projectId);
+    try {
+      planningFromConstraints(input.constraints);
+    } catch (error) {
+      if (error instanceof SemanticPlanningError) {
+        throw new StoreError('INVALID_INPUT', error.message);
+      }
+      throw error;
+    }
+    if (!input.instruction.trim()) {
+      throw new StoreError('INVALID_INPUT', 'Task instruction is required');
+    }
     const id = randomUUID();
     this.#database
       .prepare(
@@ -1102,12 +1118,9 @@ export class ProjectStore {
     baseTranscriptRevisionId: string;
     credentialHash: string;
     projectId: string;
-    shots: Array<{
-      endWordOrdinal: number;
-      rationale: string;
-      startWordOrdinal: number;
-      theme: string;
-    }>;
+    shotCountRationale?: string;
+    shots: ShotProposalDraft[];
+    summary?: string;
     taskId: string;
   }): { id: string; status: string } {
     assertAuthorized(input.actor, 'submit_proposal');
@@ -1141,6 +1154,7 @@ export class ProjectStore {
     const words = this.#wordsForTranscript(current.id);
     if (
       task.base_revision !== input.baseProjectRevision ||
+      this.getProject(input.projectId).revision !== task.base_revision ||
       current.id !== input.baseTranscriptRevisionId
     ) {
       throw new StoreError(
@@ -1148,34 +1162,24 @@ export class ProjectStore {
         'Proposal base revision is no longer current',
       );
     }
-    if (input.shots.length === 0) {
-      throw new StoreError(
-        'INVALID_PROPOSAL',
-        'Proposal must contain at least one shot',
+    const { metadata, shots } = normalizeProposalSubmission(input);
+    this.#assertExactShotCoverage(shots, words.length);
+    try {
+      const planning = planningFromConstraints(
+        JSON.parse(task.constraints_json) as Record<string, unknown>,
       );
-    }
-    let expectedStart = 0;
-    for (const [index, shot] of input.shots.entries()) {
-      if (
-        shot.startWordOrdinal !== expectedStart ||
-        !Number.isInteger(shot.endWordOrdinal) ||
-        shot.endWordOrdinal < shot.startWordOrdinal ||
-        shot.endWordOrdinal >= words.length ||
-        !shot.theme.trim() ||
-        !shot.rationale.trim()
-      ) {
-        throw new StoreError(
-          'INVALID_PROPOSAL',
-          `Shot ${index + 1} does not preserve exact chronological coverage`,
-        );
+      assertProposalMatchesPlanning({
+        database: this.#database,
+        planning,
+        shotCountRationale: metadata.shotCountRationale ?? '',
+        shots,
+        words,
+      });
+    } catch (error) {
+      if (error instanceof SemanticPlanningError) {
+        throw new StoreError(error.code, error.message);
       }
-      expectedStart = shot.endWordOrdinal + 1;
-    }
-    if (expectedStart !== words.length) {
-      throw new StoreError(
-        'INVALID_PROPOSAL',
-        'Proposal does not cover every transcript word',
-      );
+      throw error;
     }
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -1198,14 +1202,12 @@ export class ProjectStore {
           task.pacing,
           task.constraints_json,
         );
-      const insert = this.#database.prepare(
-        `INSERT INTO proposal_operations
-         (id, proposal_id, ordinal, operation, payload_json)
-         VALUES (?, ?, ?, 'create_shot', ?)`,
-      );
-      input.shots.forEach((shot, ordinal) =>
-        insert.run(randomUUID(), id, ordinal, JSON.stringify(shot)),
-      );
+      writeProposalOperations({
+        database: this.#database,
+        metadata,
+        proposalId: id,
+        shots,
+      });
       this.#database
         .prepare("UPDATE agent_tasks SET status = 'waiting' WHERE id = ?")
         .run(input.taskId);
@@ -1247,21 +1249,7 @@ export class ProjectStore {
         'Proposal must be regenerated from current state',
       );
     }
-    const operations = this.#database
-      .prepare(
-        `SELECT payload_json FROM proposal_operations
-         WHERE proposal_id = ? ORDER BY ordinal`,
-      )
-      .all(input.proposalId) as Array<{ payload_json: string }>;
-    const shots = operations.map(
-      ({ payload_json }) =>
-        JSON.parse(payload_json) as {
-          endWordOrdinal: number;
-          rationale: string;
-          startWordOrdinal: number;
-          theme: string;
-        },
-    );
+    const { shots } = readProposalOperations(this.#database, input.proposalId);
     const words = this.#wordsForTranscript(currentTranscript.id);
     const sequenceId = randomUUID();
     this.#commitIntakeRevision({
@@ -1294,7 +1282,7 @@ export class ProjectStore {
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
         );
         shots.forEach((shot, ordinal) => {
-          const shotId = randomUUID();
+          const shotId = shot.id;
           const firstWordId = words[shot.startWordOrdinal]!.id;
           const lastWordId = words[shot.endWordOrdinal]!.id;
           insertShot.run(
@@ -1352,12 +1340,7 @@ export class ProjectStore {
     actor: Actor;
     projectId: string;
     proposalId: string;
-    shots: Array<{
-      endWordOrdinal: number;
-      rationale: string;
-      startWordOrdinal: number;
-      theme: string;
-    }>;
+    shots: StagedShotProposal[];
   }): EditorialProjectSnapshot {
     assertAuthorized(input.actor, 'adjust_proposal');
     const proposal = this.#proposal(input.projectId, input.proposalId);
@@ -1371,24 +1354,34 @@ export class ProjectStore {
       proposal.base_transcript_revision_id,
     );
     this.#assertExactShotCoverage(input.shots, words.length);
+    const prior = readProposalOperations(this.#database, input.proposalId);
+    try {
+      assertProposalAdjustment({
+        database: this.#database,
+        planning: planningFromConstraints(
+          JSON.parse(proposal.constraints_json) as Record<string, unknown>,
+        ),
+        prior,
+        projectId: input.projectId,
+        proposal,
+        shots: input.shots,
+        words,
+      });
+    } catch (error) {
+      if (error instanceof SemanticPlanningError) {
+        throw new StoreError(error.code, error.message);
+      }
+      throw error;
+    }
     this.#database.exec('BEGIN IMMEDIATE');
     try {
-      this.#database
-        .prepare('DELETE FROM proposal_operations WHERE proposal_id = ?')
-        .run(input.proposalId);
-      const insert = this.#database.prepare(
-        `INSERT INTO proposal_operations
-         (id, proposal_id, ordinal, operation, payload_json)
-         VALUES (?, ?, ?, 'create_shot', ?)`,
-      );
-      input.shots.forEach((shot, ordinal) =>
-        insert.run(
-          randomUUID(),
-          input.proposalId,
-          ordinal,
-          JSON.stringify(shot),
-        ),
-      );
+      writeProposalOperations({
+        database: this.#database,
+        metadata: prior.metadata,
+        proposalId: input.proposalId,
+        replace: true,
+        shots: input.shots,
+      });
       this.#database.exec('COMMIT');
     } catch (error) {
       this.#database.exec('ROLLBACK');
@@ -1493,6 +1486,8 @@ export class ProjectStore {
       id,
       instruction,
       kind: 'asset',
+      pacing: 'Standard',
+      planning: null,
       resultRevision: null,
       retryOfTaskId: null,
       shotIds: input.shotIds,
@@ -1623,7 +1618,7 @@ export class ProjectStore {
          (id, project_id, base_revision, status, instruction, created_at,
           pacing, constraints_json, kind, target_shot_ids_json, result_revision,
           updated_at, parent_task_id)
-         VALUES (?, ?, ?, 'queued', ?, ?, 'Standard', '{}', ?, ?, NULL, ?, ?)`,
+         VALUES (?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
       )
       .run(
         id,
@@ -1631,6 +1626,8 @@ export class ProjectStore {
         project.revision,
         prior.instruction,
         now,
+        prior.pacing,
+        prior.constraints_json,
         prior.kind,
         prior.target_shot_ids_json,
         now,
@@ -1778,7 +1775,8 @@ export class ProjectStore {
     const rows = this.#database
       .prepare(
         `SELECT id, kind, instruction, target_shot_ids_json, base_revision,
-                result_revision, status, parent_task_id
+                result_revision, status, parent_task_id, pacing,
+                constraints_json
          FROM agent_tasks WHERE project_id = ?
            AND (? IS NULL OR status = ?)
          ORDER BY created_at DESC, rowid DESC`,
@@ -2766,7 +2764,8 @@ export class ProjectStore {
     const task = this.#database
       .prepare(
         `SELECT id, kind, instruction, target_shot_ids_json, base_revision,
-                result_revision, status, parent_task_id
+                result_revision, status, parent_task_id, pacing,
+                constraints_json
          FROM agent_tasks WHERE id = ? AND project_id = ?`,
       )
       .get(taskId, projectId) as AgentTaskRow | undefined;
@@ -2780,6 +2779,10 @@ export class ProjectStore {
       id: task.id,
       instruction: task.instruction,
       kind: task.kind,
+      pacing: task.pacing,
+      planning: planningFromConstraints(
+        JSON.parse(task.constraints_json) as Record<string, unknown>,
+      ),
       resultRevision: task.result_revision,
       retryOfTaskId: task.parent_task_id,
       shotIds: JSON.parse(task.target_shot_ids_json) as string[],
@@ -3325,7 +3328,7 @@ export class ProjectStore {
       .all(projectId) as ProposalRow[];
     const tasks = this.#database
       .prepare(
-        `SELECT id, status, instruction, base_revision
+        `SELECT id, status, instruction, base_revision, pacing, constraints_json
          FROM agent_tasks WHERE project_id = ?
          ORDER BY created_at DESC, rowid DESC`,
       )
@@ -3333,6 +3336,8 @@ export class ProjectStore {
       base_revision: number;
       id: string;
       instruction: string;
+      pacing: string;
+      constraints_json: string;
       status: string;
     }>;
     const sequence = this.#database
@@ -3368,34 +3373,24 @@ export class ProjectStore {
         revision: effective.revision,
         words: this.#wordsForTranscript(effective.id),
       },
-      proposals: proposals.map((proposal) => ({
-        baseProjectRevision: proposal.base_revision,
-        baseTranscriptRevisionId: proposal.base_transcript_revision_id,
-        constraints: JSON.parse(proposal.constraints_json) as Record<
-          string,
-          unknown
-        >,
-        id: proposal.id,
-        pacing: proposal.pacing,
-        shots: (
-          this.#database
-            .prepare(
-              `SELECT payload_json FROM proposal_operations
-               WHERE proposal_id = ? ORDER BY ordinal`,
-            )
-            .all(proposal.id) as Array<{ payload_json: string }>
-        ).map(
-          ({ payload_json }) =>
-            JSON.parse(payload_json) as {
-              endWordOrdinal: number;
-              rationale: string;
-              startWordOrdinal: number;
-              theme: string;
-            },
-        ),
-        status: proposal.status,
-        taskId: proposal.task_id,
-      })),
+      proposals: proposals.map((proposal) => {
+        const staged = readProposalOperations(this.#database, proposal.id);
+        return {
+          baseProjectRevision: proposal.base_revision,
+          baseTranscriptRevisionId: proposal.base_transcript_revision_id,
+          constraints: JSON.parse(proposal.constraints_json) as Record<
+            string,
+            unknown
+          >,
+          id: proposal.id,
+          pacing: proposal.pacing,
+          shotCountRationale: staged.metadata.shotCountRationale,
+          shots: staged.shots,
+          status: proposal.status,
+          summary: staged.metadata.summary,
+          taskId: proposal.task_id,
+        };
+      }),
       rawTranscript: {
         id: raw.id,
         revision: raw.revision,
@@ -3406,6 +3401,10 @@ export class ProjectStore {
         baseRevision: task.base_revision,
         id: task.id,
         instruction: task.instruction,
+        pacing: task.pacing,
+        planning: planningFromConstraints(
+          JSON.parse(task.constraints_json) as Record<string, unknown>,
+        ),
         status: task.status,
       })),
     };
@@ -3449,12 +3448,12 @@ export class ProjectStore {
   }
 
   #assertExactShotCoverage(
-    shots: Array<{
-      endWordOrdinal: number;
-      rationale: string;
-      startWordOrdinal: number;
-      theme: string;
-    }>,
+    shots: Array<
+      Pick<
+        StagedShotProposal,
+        'endWordOrdinal' | 'rationale' | 'startWordOrdinal' | 'theme'
+      >
+    >,
     wordCount: number,
   ): void {
     if (shots.length === 0) {

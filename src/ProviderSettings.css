@@ -1,0 +1,128 @@
+.provider-settings {
+  overflow: hidden;
+}
+
+.provider-settings-heading,
+.provider-card-heading,
+.provider-actions,
+.provider-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.provider-settings-heading h2,
+.provider-settings-heading p,
+.provider-card h3 {
+  margin: 0;
+}
+
+.provider-active {
+  margin: 0;
+  border-radius: 8px;
+  background: #f4efe5;
+  padding: 10px 12px;
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.provider-card {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  border: 1px solid #d9d4ca;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.provider-card-heading span {
+  border-radius: 999px;
+  background: #eee9df;
+  padding: 4px 8px;
+  color: #655f56;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.provider-card-heading [data-provider-status='valid'] {
+  color: #175c3b;
+  background: #dcefe4;
+}
+
+.provider-card-heading [data-provider-status='invalid'] {
+  color: #8b2e21;
+  background: #f6ddd8;
+}
+
+.provider-facts {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.provider-facts div {
+  display: grid;
+  grid-template-columns: 94px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.provider-facts dt {
+  color: #777066;
+}
+
+.provider-facts dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.provider-actions {
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.provider-actions button {
+  flex: 1 1 130px;
+}
+
+.provider-remove {
+  color: #8b2e21;
+}
+
+.provider-confirm {
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  border-radius: 8px;
+  background: #f6e7e2;
+  padding: 10px;
+}
+
+.provider-confirm span {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+.provider-message {
+  min-height: 22px;
+  margin: 0;
+  color: #65542b;
+  font-weight: 650;
+}
+
+@media (max-width: 720px) {
+  .provider-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .provider-settings-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

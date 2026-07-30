@@ -15,10 +15,6 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
     join(tmpdir(), 'rant-studio-browser-editorial-'),
   );
   const store = openProjectStore(join(directory, 'project.db'));
-  const humanCredential = store.issueCredential({
-    role: 'human',
-    scopes: ['project:*'],
-  });
   const agentCredential = store.issueCredential({
     role: 'agent',
     scopes: [
@@ -32,10 +28,7 @@ test('production transcript proposal Shot Ledger asset candidate agent activity 
   const service = await startLocalService({ port: 0, store });
 
   try {
-    await page.goto('/?mode=intake');
-    await page.getByLabel('Local service URL').fill(service.url);
-    await page.getByLabel('Local credential').fill(humanCredential.token);
-    await page.getByRole('button', { name: 'Connect' }).click();
+    await page.goto(`/?mode=intake&service=${encodeURIComponent(service.url)}`);
     await page.getByLabel('Project name').fill('Production Editorial');
     await page.getByRole('button', { name: 'Create project' }).click();
     await page.getByLabel('Narration file').setInputFiles({
